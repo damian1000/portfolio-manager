@@ -15,23 +15,25 @@ class BitfinexMovementMapper {
     fun mapMovement(json: String): List<Movement> {
         val transfers = mutableListOf<Movement>()
         try {
-            val history:List<List<String>> = mapper.readValue(json);
+            val history:List<List<Any?>> = mapper.readValue(json);
             for (bitfinexTransfer in history) {
                 val transfer = Movement()
                 transfers.add(transfer)
-                transfer.id = java.lang.Long.valueOf(bitfinexTransfer[ID_INDEX])
-                transfer.currencyCode = bitfinexTransfer[CURRENCY_CODE_INDEX]
-                transfer.currencyValue = bitfinexTransfer[CURRENCY_VALUE_INDEX]
+                transfer.id = bitfinexTransfer.required(ID_INDEX).toString().toLong()
+                transfer.currencyCode = bitfinexTransfer.optionalString(CURRENCY_CODE_INDEX)
+                transfer.currencyValue = bitfinexTransfer.optionalString(CURRENCY_VALUE_INDEX)
                 transfer.createdTimestamp = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(bitfinexTransfer[CREATED_TIMESTAMP_INDEX].toLong()), ZoneId.of("UTC"));
+                    Instant.ofEpochMilli(bitfinexTransfer.required(CREATED_TIMESTAMP_INDEX).toString().toLong()),
+                    ZoneId.of("UTC"));
                 transfer.updatedTimestamp = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(bitfinexTransfer[UPDATED_TIMESTAMP_INDEX].toLong()), ZoneId.of("UTC"));
-                transfer.status = bitfinexTransfer[STATUS_INDEX]
-                transfer.amount = BigDecimal(bitfinexTransfer[AMOUNT_INDEX])
-                transfer.fees = BigDecimal(bitfinexTransfer[FEES_INDEX])
-                transfer.destinationAddress = bitfinexTransfer[DESTINATION_ADDRESS_INDEX]
-                transfer.transactionId = bitfinexTransfer[TRANSACTION_ID_INDEX]
-                transfer.withdrawTransactionNote = bitfinexTransfer[NOTE_INDEX]
+                    Instant.ofEpochMilli(bitfinexTransfer.required(UPDATED_TIMESTAMP_INDEX).toString().toLong()),
+                    ZoneId.of("UTC"));
+                transfer.status = bitfinexTransfer.optionalString(STATUS_INDEX)
+                transfer.amount = bitfinexTransfer.optionalBigDecimal(AMOUNT_INDEX)
+                transfer.fees = bitfinexTransfer.optionalBigDecimal(FEES_INDEX)
+                transfer.destinationAddress = bitfinexTransfer.optionalString(DESTINATION_ADDRESS_INDEX)
+                transfer.transactionId = bitfinexTransfer.optionalString(TRANSACTION_ID_INDEX)
+                transfer.withdrawTransactionNote = bitfinexTransfer.optionalString(NOTE_INDEX)
             }
         } catch (e: JsonProcessingException) {
             throw RuntimeException(e)
@@ -51,5 +53,14 @@ class BitfinexMovementMapper {
         private const val DESTINATION_ADDRESS_INDEX = 16
         private const val TRANSACTION_ID_INDEX = 20
         private const val NOTE_INDEX = 21
+
+        private fun List<Any?>.required(index: Int): Any =
+            getOrNull(index) ?: throw IllegalArgumentException("Bitfinex movement field $index is missing")
+
+        private fun List<Any?>.optionalString(index: Int): String? =
+            getOrNull(index)?.toString()
+
+        private fun List<Any?>.optionalBigDecimal(index: Int): BigDecimal? =
+            getOrNull(index)?.toString()?.let(::BigDecimal)
     }
 }

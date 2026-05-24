@@ -10,7 +10,7 @@ A Kotlin tool for **multi-venue position aggregation**. Pulls wallet balances an
 
 - **Multi-venue connectivity** — a `Gateway` per exchange (Binance, Bitfinex) with a common shape (`balances()`, `movements(currency)`, `submitWithdrawalRequest(...)`)
 - **`MessageSender` boundary** — HTTP is behind an interface, so signing logic, request building, and response mapping are unit-testable with no network (see `binance/MessageSender.kt`, `bitfinex/MessageSender.kt`)
-- **Withdrawal safety** — the live `submitWithdrawalRequest` call is intentionally commented out in `bitfinex/Main.kt`; you have to uncomment to actually move funds. Mistakes here cost money, so the default is "look, don't touch"
+- **Withdrawal safety** — the live `submitWithdrawalRequest` path requires the explicit `--withdraw` command. Mistakes here cost money, so the default is "look, don't touch"
 - **Secret handling** — API key/secret read from env vars only. No creds in code, no creds in committed config, no creds in the JAR
 - **Per-venue request signing** — HMAC-SHA256 (Binance) and HMAC-SHA384 (Bitfinex), each with a unit-tested signer
 
@@ -60,12 +60,17 @@ The Gradle `application` plugin entry point is `binance.MainKt`:
 ./gradlew run
 ```
 
-For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfinex.MainKt` directly. The Bitfinex `Main` walks through:
+For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfinex.MainKt` directly. The Bitfinex `Main` defaults to read-only behavior:
 
 1. List wallet balances
 2. List recent movements for a currency
 3. Print API key permissions
-4. (Commented out) submit a withdrawal — uncomment intentionally
+
+Withdrawal is opt-in:
+
+```bash
+./gradlew run --args="--withdraw BTC 0.01 destination-address"
+```
 
 ## Tests
 
@@ -84,7 +89,7 @@ Unit tests cover both signers byte-for-byte against known signed payloads. No ne
 ## Stack
 
 - Kotlin 2.3.21 (JVM target 25), Java 25 toolchain
-- Apache HttpClient 5.5, OkHttp 5
+- Apache HttpClient 5.5
 - Jackson 2.20 (BOM-managed)
 - Apache Commons Codec / Lang3 / IO
 - JUnit Jupiter 6.1, Mockito 5.23, Hamcrest 3

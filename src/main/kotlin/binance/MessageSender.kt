@@ -48,7 +48,7 @@ class MessageSender {
     fun sendPostMessage(apiPath: String, message: Any): String {
 //        val body = createJson(message)
 //        return sendPostMessageInternal(apiPath, body)
-        return ""
+        throw UnsupportedOperationException("Binance POST is not implemented for $apiPath")
     }
 
 //    private fun sendPostMessageInternal(apiPath: String, jsonBody: String): String {

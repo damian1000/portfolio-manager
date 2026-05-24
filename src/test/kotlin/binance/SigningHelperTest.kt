@@ -15,6 +15,10 @@ class SigningHelperTest {
         // HMAC-SHA256(key="secret", msg="timestamp=1700000000") = 64-char hex
         val signed = signer.sign("timestamp=1700000000", "secret")
 
+        assertThat(
+            signed,
+            equalTo("64e07dc8254f55df9a8b73101668ca102e119c2b712ca363d46ad635e1fa2c65")
+        )
         assertThat(signed.length, equalTo(64))
         assertThat(signed, matchesRegex("[0-9a-f]{64}"))
         // Deterministic
