@@ -1,5 +1,9 @@
 # Portfolio Manager
 
+[![CI](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blueviolet)](https://kotlinlang.org/)
+[![JDK](https://img.shields.io/badge/jdk-25-orange)](https://openjdk.org/projects/jdk/25/)
+
 A small Kotlin tool that talks to **Binance** and **Bitfinex** REST APIs to retrieve wallet balances, transfer/movement history, and (on Bitfinex) submit withdrawals. Built to demonstrate authenticated exchange API access with HMAC request signing.
 
 ## What it demonstrates
