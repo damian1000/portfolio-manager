@@ -1,0 +1,9 @@
+portfolio-manager
+Copyright 2026 Damian Howard
+
+This product includes software developed by:
+- JetBrains — Kotlin
+- The Apache Software Foundation (https://www.apache.org/) — Apache HttpComponents, Commons Codec / Lang3 / IO
+- FasterXML — Jackson
+- Square — OkHttp
+- Project Lombok — https://projectlombok.org/

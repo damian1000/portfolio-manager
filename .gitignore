@@ -1,0 +1,28 @@
+# Build / IDE
+build/
+.gradle/
+.kotlin/
+out/
+bin/
+.idea/
+.vscode/
+.bsp/
+*.iml
+*.class
+*.ctxt
+
+# Secrets
+.env
+.env.local
+
+# Logs / runtime
+*.log
+hs_err_pid*
+
+# Packaged artifacts
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
