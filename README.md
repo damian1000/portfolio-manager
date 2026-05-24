@@ -4,16 +4,32 @@
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blueviolet)](https://kotlinlang.org/)
 [![JDK](https://img.shields.io/badge/jdk-25-orange)](https://openjdk.org/projects/jdk/25/)
 
-A small Kotlin tool that talks to **Binance** and **Bitfinex** REST APIs to retrieve wallet balances, transfer/movement history, and (on Bitfinex) submit withdrawals. Built to demonstrate authenticated exchange API access with HMAC request signing.
+A Kotlin tool for **multi-venue position aggregation**. Pulls wallet balances and movement history from **Binance** and **Bitfinex** through their authenticated REST APIs, with a venue-agnostic gateway abstraction so a third exchange would be one new package, not a rewrite.
 
 ## What it demonstrates
 
-- Authenticated exchange REST calls — **HMAC-SHA256** (Binance) and **HMAC-SHA384** (Bitfinex)
-- Apache HttpClient 5.5 with the modern `HttpClientResponseHandler` API
-- Secret handling via env vars only — no creds in code or config
-- Kotlin 2.3 on JDK 25 toolchain (JVM target 25)
-- Two independent CLI entry points (Binance, Bitfinex) sharing a small set of helpers
-- Unit tests for the signing logic with no IO or network
+- **Multi-venue connectivity** — a `Gateway` per exchange (Binance, Bitfinex) with a common shape (`balances()`, `movements(currency)`, `submitWithdrawalRequest(...)`)
+- **`MessageSender` boundary** — HTTP is behind an interface, so signing logic, request building, and response mapping are unit-testable with no network (see `binance/MessageSender.kt`, `bitfinex/MessageSender.kt`)
+- **Withdrawal safety** — the live `submitWithdrawalRequest` call is intentionally commented out in `bitfinex/Main.kt`; you have to uncomment to actually move funds. Mistakes here cost money, so the default is "look, don't touch"
+- **Secret handling** — API key/secret read from env vars only. No creds in code, no creds in committed config, no creds in the JAR
+- **Per-venue request signing** — HMAC-SHA256 (Binance) and HMAC-SHA384 (Bitfinex), each with a unit-tested signer
+
+## Architecture
+
+```
+   ┌─────────────────────┐                ┌──────────────────┐
+   │  binance.Gateway    │───────────────▶│ Binance REST     │
+   │   ├─ MessageSender  │  signed HTTP   │ api.binance.com  │
+   │   └─ SigningHelper  │                └──────────────────┘
+   └─────────────────────┘
+   ┌─────────────────────┐                ┌──────────────────┐
+   │  bitfinex.Gateway   │───────────────▶│ Bitfinex REST    │
+   │   ├─ MessageSender  │  signed HTTP   │ api.bitfinex.com │
+   │   └─ SigningHelper  │                └──────────────────┘
+   └─────────────────────┘
+```
+
+Each venue lives in its own package — no shared "base client" inheritance, no premature unification. The shared shape is the `Gateway` interface; signing differs by venue and is kept local to it.
 
 ## Prerequisites
 
@@ -22,23 +38,19 @@ A small Kotlin tool that talks to **Binance** and **Bitfinex** REST APIs to retr
 
 ## Setup
 
-Copy the env template and fill in your credentials:
-
 ```bash
 cp .env.example .env
-# edit .env, then `source .env` (or use a tool like direnv)
+# edit .env, then `source .env` (or use direnv)
 ```
 
-Required env vars depending on which side you run:
-
-| Variable | Side |
+| Variable | Used by |
 |---|---|
 | `BINANCE_API_KEY` | Binance |
 | `BINANCE_API_SECRET` | Binance |
 | `BITFINEX_API_KEY` | Bitfinex |
 | `BITFINEX_API_SECRET` | Bitfinex |
 
-⚠️ **Use read-only API keys** for exploring. Withdrawal endpoints require trade/withdraw permissions — only enable those scopes if you really intend to call `submitWithdrawalRequest`.
+> **Use read-only API keys when exploring.** Withdrawal endpoints need explicit trade/withdraw scopes. Only enable those scopes when you actually intend to call `submitWithdrawalRequest`.
 
 ## Running
 
@@ -48,18 +60,12 @@ The Gradle `application` plugin entry point is `binance.MainKt`:
 ./gradlew run
 ```
 
-For the Bitfinex side, run the `bitfinex.MainKt` directly (or change the `mainClass` in `build.gradle`):
+For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfinex.MainKt` directly. The Bitfinex `Main` walks through:
 
-```bash
-./gradlew run -PmainClass=bitfinex.MainKt   # if you wire a -P override
-# or simply edit build.gradle: application { mainClass = 'bitfinex.MainKt' }
-```
-
-The bitfinex `Main.kt` example does:
-1. Print wallet balances
-2. Print recent movement history for a currency
-3. Print API key settings
-4. Optionally submit a withdrawal (uncomment when you really want to)
+1. List wallet balances
+2. List recent movements for a currency
+3. Print API key permissions
+4. (Commented out) submit a withdrawal — uncomment intentionally
 
 ## Tests
 
@@ -67,15 +73,19 @@ The bitfinex `Main.kt` example does:
 ./gradlew test
 ```
 
-The unit tests cover HMAC signing for both venues. No network, no env vars needed.
+Unit tests cover both signers byte-for-byte against known signed payloads. No network, no env vars.
+
+## Why this design (for the reader)
+
+- **Why no shared HTTP base?** Each venue has its own quirks — Binance puts the signature in the query string, Bitfinex in a header with a nonce. A shared base ends up as a soup of `if (venue == ...)` branches. One package per venue keeps quirks local.
+- **Why `MessageSender` as an interface?** So the signer/payload-builder is testable without spinning up a mock HTTP server. The real `HttpMessageSender` is a thin Apache HttpClient wrapper.
+- **What's missing for production?** A position keeper that reconciles balances against an internal ledger, idempotency keys on withdrawals, rate-limit handling per venue, and structured audit logs on every authenticated call. The current shape is a CLI demonstrator, not a production position service.
 
 ## Stack
 
-- Kotlin 2.3.21 (JVM target 25)
-- Java 25 toolchain
-- Apache HttpClient 5.5
-- Jackson 2.20 (BOM-managed: core, databind, kotlin module)
-- OkHttp 5 (for some endpoints)
+- Kotlin 2.3.21 (JVM target 25), Java 25 toolchain
+- Apache HttpClient 5.5, OkHttp 5
+- Jackson 2.20 (BOM-managed)
 - Apache Commons Codec / Lang3 / IO
 - JUnit Jupiter 6.1, Mockito 5.23, Hamcrest 3
 - Gradle 9.5.1
@@ -84,8 +94,8 @@ The unit tests cover HMAC signing for both venues. No network, no env vars neede
 
 ```
 src/main/kotlin/
-├── binance/        # Binance API client + HMAC-SHA256 signer
-└── bitfinex/       # Bitfinex API client + HMAC-SHA384 signer
+├── binance/        # Binance gateway, signer, message sender, DTOs
+└── bitfinex/       # Bitfinex gateway, signer, message sender, DTOs
 src/test/kotlin/
 ├── binance/SigningHelperTest.kt
 └── bitfinex/SigningHelperTest.kt
