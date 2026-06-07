@@ -1,19 +1,37 @@
 # TODO
 
+## Roadmap (prioritized)
+
+### P1 — honest claims + withdrawal safety (do before pinning this repo)
+
+- **Audit README against code.** An external review flagged that the README advertises position aggregation and a common Gateway interface, neither of which exists today. Either implement them (see P2) or rewrite the README so the project is positioned honestly as "two venue-local exchange clients with shared HTTP/signing utilities". Possibly rename the repo to "Crypto Exchange Connectivity".
+- **Add withdrawal safety before any further promotion.** Currently `bitfinex/Main.kt --withdraw <currency> <amount> <address>` will submit a real withdrawal with one CLI flag. Minimum bar before showcasing this repo:
+  - Dry-run by default; require `--confirm-withdrawal` to actually submit.
+  - Positive-amount validation and currency whitelist check before any network call.
+  - Address redaction in logs (current code logs the destination address in plain text).
+  - Non-zero exit codes from the CLI on every failure path.
+  - A persistent audit record for every authenticated withdrawal call (timestamp, currency, amount, redacted destination, response).
+- Until those land, remove withdrawal usage from the prominent README example.
+
+### P2 — pick one depth investment
+
+The review's "make this a real connectivity layer" framing is correct; one focused investment moves the needle more than nibbling. Pick one:
+
+- **Real cross-venue aggregation.** A small `Portfolio` service that asks both gateways for balances/movements, normalises to a venue-agnostic model, and surfaces a unified view. Demonstrates the shared `Gateway` interface honestly.
+- **Position reconciliation.** Given a local set of positions and a fresh venue snapshot, identify drift (missing fills, extra fills, size mismatches) and surface it as a structured report.
+
+### P3 — stretch (later)
+
+- Rate-limit handling + retry policy per venue (per-exchange headers/codes).
+- Typed response models in place of raw `String` returns.
+- Recorded-response contract tests against saved exchange payloads.
+
 ## Bug Fixes
 
 - Replace broad `catch (e: Exception)` blocks in CLI entry points with targeted failures and non-zero process exits.
 - Remove unused fields and commented-out copied Bitfinex code from `BinanceGateway`.
 - Validate CLI currency arguments before making network requests.
 - Avoid printing full signed Binance URLs because the signature is sensitive request metadata.
-
-## Safety
-
-- Add a second explicit confirmation gate for withdrawals, such as `--confirm-withdrawal`, before calling live withdrawal endpoints.
-- Add a dry-run mode for withdrawals that prints the request summary without submitting it.
-- Require withdrawal destination, currency, and amount to be echoed back in a structured confirmation message.
-- Add minimum validation for withdrawal amount format and positivity.
-- Add structured audit logging for every authenticated call, redacting API keys, signatures, addresses where appropriate, and secrets.
 
 ## Design Review Changes
 
