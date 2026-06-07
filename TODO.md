@@ -1,14 +1,7 @@
 # TODO
 
-## Next (Highest Leverage)
-
-- **HMAC signing tests for both venues.** The signing code is the most security-critical thing in this repo and currently has no unit-test coverage. Cover: canonical query-string ordering, `timestamp`/`recvWindow`, and the exact signature payload for Binance; nonce monotonicity and JSON body construction for Bitfinex. Use known-answer vectors so a future refactor can't silently break the signature.
-
 ## Bug Fixes
 
-- Add tests for Binance signed request construction, including query-string ordering, `timestamp`, `recvWindow`, and `signature`.
-- Add tests for Bitfinex authenticated request construction, including nonce, signature payload, headers, and JSON body.
-- Add mapper tests using representative Binance and Bitfinex movement payloads, including null optional fields and short malformed arrays.
 - Replace broad `catch (e: Exception)` blocks in CLI entry points with targeted failures and non-zero process exits.
 - Remove unused fields and commented-out copied Bitfinex code from `BinanceGateway`.
 - Validate CLI currency arguments before making network requests.
@@ -27,7 +20,6 @@
 - Introduce a small shared `Gateway` interface if both venues need to be consumed polymorphically by a portfolio service.
 - Keep signing, endpoint paths, and DTOs venue-local; avoid a shared base client unless duplication becomes substantial.
 - Replace raw `String` responses from gateway methods with typed response models where API shape is stable.
-- Move HTTP sender construction behind injectable dependencies so request builders can be unit-tested without real network clients.
 - Extract common movement model only if downstream portfolio logic needs venue-agnostic movement handling.
 - Separate CLI/demo code from gateway/library code so production code is not coupled to `println` and command-line parsing.
 
