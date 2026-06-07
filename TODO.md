@@ -54,5 +54,5 @@
 - Remove unused dependencies such as Lombok, Commons IO, Commons Lang, Mockito, or Hamcrest if they remain unused after test cleanup.
 - Add a formatter or linter task and run it in CI.
 - Normalize Kotlin style: remove Java-style semicolons and prefer idiomatic Kotlin naming such as `destinationAddress`.
-- Consider replacing `System.out.println` calls with a minimal logger or explicit CLI output helpers.
+- Replace `System.out.println` in the gateway/library code with SLF4J — gateway classes are reusable library code, not a CLI. The CLI entry points may keep `println` for user-facing output; everything else should log structurally.
 - Keep generated build outputs and IDE files out of version control; current `.gitignore` already covers these.
