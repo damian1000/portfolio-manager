@@ -7,11 +7,12 @@ import org.apache.hc.core5.net.WWWFormCodec
 import java.io.IOException
 import java.nio.charset.Charset
 
-class MessageSender {
-    private val signingHelper = SigningHelper()
-    private val messageSender = HttpMessageSender()
-    private val mapper = ObjectMapper()
-    private val propertyHelper = PropertyHelper()
+class MessageSender(
+    private val signingHelper: SigningHelper = SigningHelper(),
+    private val httpMessageSender: HttpMessageSender = HttpMessageSender(),
+    private val mapper: ObjectMapper = ObjectMapper(),
+    private val propertyHelper: PropertyHelper = PropertyHelper(),
+) {
 
     fun sendGetMessage(apiPath: String): String {
         return sendGetMessage(apiPath, null)
@@ -24,7 +25,7 @@ class MessageSender {
             val nameValuePairs: List<BasicNameValuePair> = parameterMap
                 .map { entry -> BasicNameValuePair(entry.key, entry.value.toString()) }
 
-            val apiSecret = propertyHelper.getApiSecret();
+            val apiSecret = propertyHelper.getApiSecret()
             val queryParameters = WWWFormCodec.format(nameValuePairs, Charset.forName("UTF-8"))
             val signature = signingHelper.sign(queryParameters, apiSecret)
 
@@ -34,36 +35,13 @@ class MessageSender {
             ""
         }
 
-        val apiKey = propertyHelper.getApiKey();
+        val apiKey = propertyHelper.getApiKey()
         val uri = "https://api.binance.com$apiPath$allQueryParameters"
-        println("Sending $uri")
 
         return try {
-            messageSender.sendGetMessage(uri, apiKey)
+            httpMessageSender.sendGetMessage(uri, apiKey)
         } catch (e: IOException) {
             throw RuntimeException(e)
         }
     }
-
-    fun sendPostMessage(apiPath: String, message: Any): String {
-//        val body = createJson(message)
-//        return sendPostMessageInternal(apiPath, body)
-        throw UnsupportedOperationException("Binance POST is not implemented for $apiPath")
-    }
-
-//    private fun sendPostMessageInternal(apiPath: String, jsonBody: String): String {
-//        val apiKey = propertyHelper.getApiKey()
-//        val apiSecret = propertyHelper.getApiSecret();
-//        val nonce = (System.currentTimeMillis() * 1000).toString()
-//        val signature = signatureHelper.createSignatureHelper(jsonBody, nonce, apiPath)
-//        val signedSignature = signingHelper.sign(signature, apiSecret)
-//        val uri = String.format("https://api.binance.com/%s", apiPath)
-//        println("Sending $jsonBody to $apiPath")
-//        return try {
-//            messageSender.sendPostMessage(uri, nonce, apiKey, signedSignature, jsonBody)
-//        } catch (e: IOException) {
-//            throw RuntimeException(e)
-//        }
-//    }
-
 }
