@@ -34,8 +34,17 @@ Each venue lives in its own package — no shared "base client" inheritance, no 
 
 ## Prerequisites
 
-- JDK 25 (Gradle toolchain will fetch one if missing)
+- JDK 25
 - An exchange account with API key + secret on whichever venue you want to hit
+
+### Java compatibility
+
+Java 25 is the supported baseline: Kotlin and Java sources compile to JVM 25 bytecode, so older runtimes are not supported. The checked-in Gradle wrapper pins the build tooling, but it does not install the JDK; install a JDK 25 distribution and make it available through `JAVA_HOME` or `PATH`.
+
+```bash
+java -version
+./gradlew --version
+```
 
 ## Setup
 
@@ -79,7 +88,14 @@ Withdrawal is opt-in:
 ./gradlew test
 ```
 
-Unit tests cover both signers byte-for-byte against known signed payloads. No network, no env vars.
+The test suite runs without network access, exchange credentials, or environment variables. It covers:
+
+- Binance and Bitfinex HMAC signing against known payloads
+- Gateway request construction and response handling with mocked senders
+- Movement-response mapping for both venues
+- HTTP sender success and failure paths with mocked clients
+- Environment/property lookup behavior
+- DTO construction and accessor contracts
 
 ## Why this design (for the reader)
 
@@ -103,8 +119,9 @@ src/main/kotlin/
 ├── binance/        # Binance gateway, signer, message sender, DTOs
 └── bitfinex/       # Bitfinex gateway, signer, message sender, DTOs
 src/test/kotlin/
-├── binance/SigningHelperTest.kt
-└── bitfinex/SigningHelperTest.kt
+├── binance/        # gateway, mapper, sender, property, and signing tests
+├── bitfinex/       # gateway, mapper, sender, property, and signing tests
+└── PojoTest.kt     # shared DTO contract tests
 ```
 
 ## License
