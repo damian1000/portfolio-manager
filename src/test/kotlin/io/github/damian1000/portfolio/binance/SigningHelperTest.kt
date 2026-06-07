@@ -32,4 +32,12 @@ class SigningHelperTest {
         val b = signer.sign(message, "secret-b")
         assertThat(a, org.hamcrest.Matchers.not(equalTo(b)))
     }
+
+    @Test
+    fun `empty secret triggers wrapper RuntimeException with helpful message`() {
+        val ex = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException::class.java) {
+            signer.sign("anything", "")
+        }
+        assertThat(ex.message, equalTo("Unable to sign message."))
+    }
 }

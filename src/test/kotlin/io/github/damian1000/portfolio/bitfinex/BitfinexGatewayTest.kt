@@ -43,6 +43,21 @@ class BitfinexGatewayTest {
     }
 
     @Test
+    fun `default paymentIdSupplier produces a UUID per call`() {
+        val captor = argumentCaptor<BitfinexWithdrawalRequest>()
+        val defaultGateway = BitfinexGateway(messageSender = messageSender, bitfinexMovementMapper = mapper)
+        whenever(messageSender.sendMessage(eq("v2/auth/w/withdraw"), captor.capture())).thenReturn("ok")
+
+        defaultGateway.submitWithdrawalRequest(Currency.BTC, "0.10", "bc1qaddress")
+        defaultGateway.submitWithdrawalRequest(Currency.BTC, "0.10", "bc1qaddress")
+
+        val first = captor.firstValue.paymentId
+        val second = captor.secondValue.paymentId
+        assertEquals(36, first.length, "default supplier produces UUIDs")
+        org.junit.jupiter.api.Assertions.assertNotEquals(first, second, "each call produces a fresh id")
+    }
+
+    @Test
     fun `submitWithdrawalRequest builds the withdrawal DTO from arguments`() {
         val captor = argumentCaptor<BitfinexWithdrawalRequest>()
         whenever(messageSender.sendMessage(eq("v2/auth/w/withdraw"), captor.capture())).thenReturn("submitted")

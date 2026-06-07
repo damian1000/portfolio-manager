@@ -56,6 +56,24 @@ class MessageSenderTest {
     }
 
     @Test
+    fun `default nonceSupplier produces a microsecond-precision timestamp`() {
+        val nonceCaptor = argumentCaptor<String>()
+        val defaultSender = MessageSender(
+            signatureHelper = SignatureHelper(),
+            signingHelper = SigningHelper(),
+            httpMessageSender = http,
+            propertyHelper = propertyHelper,
+        )
+        whenever(http.sendPostMessage(any(), nonceCaptor.capture(), any(), any(), any())).thenReturn("[]")
+
+        defaultSender.sendMessage("v2/auth/r/wallets")
+
+        val nonce = nonceCaptor.firstValue
+        assertTrue(nonce.length >= 13, "default supplier returns micros so it should be ~16 digits")
+        assertTrue(nonce.all { it.isDigit() })
+    }
+
+    @Test
     fun `IOException from http layer becomes RuntimeException`() {
         whenever(http.sendPostMessage(any(), any(), any(), any(), any()))
             .thenAnswer { throw IOException("network") }

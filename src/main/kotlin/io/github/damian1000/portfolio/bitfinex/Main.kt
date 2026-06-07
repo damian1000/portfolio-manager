@@ -1,5 +1,9 @@
 package io.github.damian1000.portfolio.bitfinex
 
+import org.slf4j.LoggerFactory
+
+private val log = LoggerFactory.getLogger("io.github.damian1000.portfolio.bitfinex.Main")
+
 fun main(args: Array<String>) {
     val bitfinexGateway = BitfinexGateway()
     val propertyHelper = PropertyHelper()
@@ -13,24 +17,22 @@ fun main(args: Array<String>) {
         }
         val currency = Currency.valueOf(if (withdrawRequested) withdrawalArgs[0] else args.getOrElse(0) { "BTC" })
 
-        println("wallets: " + bitfinexGateway.retrieveWallets())
-        val history = bitfinexGateway.retrieveMovementHistory(currency.name)
-        for (tranfer in history) println(tranfer)
+        log.info("wallets: {}", bitfinexGateway.retrieveWallets())
+        bitfinexGateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
 
-        println("settings: "+bitfinexGateway.retrieveSettingsForKey(propertyHelper.getApiKey()));
+        log.info("settings: {}", bitfinexGateway.retrieveSettingsForKey(propertyHelper.getApiKey()))
 
         if (withdrawRequested) {
             val amount = withdrawalArgs[1]
             val destinationAddress = withdrawalArgs[2]
-            println("submitWithdrawalRequest: " +
+            log.info("submitWithdrawalRequest: {}",
                 bitfinexGateway.submitWithdrawalRequest(currency, amount, destinationAddress))
 
-            println("wallets: " + bitfinexGateway.retrieveWallets())
-            val historyAfter = bitfinexGateway.retrieveMovementHistory(currency.name)
-            for (tranfer in historyAfter) println(tranfer)
+            log.info("wallets: {}", bitfinexGateway.retrieveWallets())
+            bitfinexGateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
         }
 
     } catch (e: Exception) {
-        e.printStackTrace()
+        log.error("Bitfinex CLI failed", e)
     }
 }
