@@ -8,12 +8,12 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class BitfinexMovementMapperTest {
-
     private val mapper = BitfinexMovementMapper()
 
     @Test
     fun `maps single movement with full row`() {
-        val json = """
+        val json =
+            """
             [[
               7, "BTC", "BTC",
               null, null,
@@ -27,7 +27,7 @@ class BitfinexMovementMapperTest {
               null, null, null,
               "tx-xyz", "memo"
             ]]
-        """.trimIndent()
+            """.trimIndent()
 
         val m = mapper.mapMovement(json).single()
         assertEquals(7L, m.id)

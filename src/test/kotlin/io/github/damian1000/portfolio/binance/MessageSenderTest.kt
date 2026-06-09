@@ -14,18 +14,21 @@ import org.mockito.kotlin.whenever
 import java.io.IOException
 
 class MessageSenderTest {
-
-    private val propertyHelper = PropertyHelper(env = mapOf(
-        "BINANCE_API_KEY" to "test-key",
-        "BINANCE_API_SECRET" to "test-secret",
-    )::get)
+    private val propertyHelper =
+        PropertyHelper(
+            env = mapOf(
+                "BINANCE_API_KEY" to "test-key",
+                "BINANCE_API_SECRET" to "test-secret",
+            )::get,
+        )
     private val httpSender = mock<HttpMessageSender>()
-    private val sender = MessageSender(
-        signingHelper = SigningHelper(),
-        httpMessageSender = httpSender,
-        mapper = ObjectMapper(),
-        propertyHelper = propertyHelper,
-    )
+    private val sender =
+        MessageSender(
+            signingHelper = SigningHelper(),
+            httpMessageSender = httpSender,
+            mapper = ObjectMapper(),
+            propertyHelper = propertyHelper,
+        )
 
     @Test
     fun `GET without params hits the bare api path`() {

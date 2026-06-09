@@ -13,9 +13,12 @@ import java.io.IOException
 
 class MessageSenderTest {
 
-    private val propertyHelper = PropertyHelper(env = mapOf(
-        "BITFINEX_API_KEY" to "bk", "BITFINEX_API_SECRET" to "bs",
-    )::get)
+    private val propertyHelper = PropertyHelper(
+        env = mapOf(
+            "BITFINEX_API_KEY" to "bk",
+            "BITFINEX_API_SECRET" to "bs",
+        )::get,
+    )
     private val http = mock<HttpMessageSender>()
     private val sender = MessageSender(
         signatureHelper = SignatureHelper(),

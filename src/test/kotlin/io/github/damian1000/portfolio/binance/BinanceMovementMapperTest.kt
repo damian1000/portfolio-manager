@@ -9,7 +9,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class BinanceMovementMapperTest {
-
     private val mapper = BinanceMovementMapper()
 
     @Test
@@ -18,7 +17,8 @@ class BinanceMovementMapperTest {
         // optionals are placed at the indexes the mapper actually reads from.
         // 1640995200000ms = 2022-01-01T00:00:00Z
         // 1641081600000ms = 2022-01-02T00:00:00Z
-        val json = """
+        val json =
+            """
             [[
               42, "USDC", "USDC-erc20",
               null, null,
@@ -32,7 +32,7 @@ class BinanceMovementMapperTest {
               null, null, null,
               "tx-abc", "Withdrawal note"
             ]]
-        """.trimIndent()
+            """.trimIndent()
 
         val movements = mapper.mapMovement(json)
         assertEquals(1, movements.size)
@@ -52,7 +52,8 @@ class BinanceMovementMapperTest {
 
     @Test
     fun `null optional fields parse as null`() {
-        val json = """
+        val json =
+            """
             [[
               99, null, null,
               null, null,
@@ -66,7 +67,7 @@ class BinanceMovementMapperTest {
               null, null, null,
               null, null
             ]]
-        """.trimIndent()
+            """.trimIndent()
 
         val movements = mapper.mapMovement(json)
         val m = movements.single()
@@ -84,12 +85,13 @@ class BinanceMovementMapperTest {
 
     @Test
     fun `multiple movements parse independently`() {
-        val json = """
+        val json =
+            """
             [
               [1, "A", "A", null, null, 1640995200000, 1640995200000, null, null, "OK", null, null, "1.00", null, null, null, null, null, null, null, null, null],
               [2, "B", "B", null, null, 1640995200000, 1640995200000, null, null, "OK", null, null, "2.00", null, null, null, null, null, null, null, null, null]
             ]
-        """.trimIndent()
+            """.trimIndent()
         val movements = mapper.mapMovement(json)
         assertEquals(2, movements.size)
         assertEquals(1L, movements[0].id)

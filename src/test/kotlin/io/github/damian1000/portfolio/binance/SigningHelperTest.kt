@@ -6,7 +6,6 @@ import org.hamcrest.Matchers.matchesRegex
 import org.junit.jupiter.api.Test
 
 class SigningHelperTest {
-
     private val signer = SigningHelper()
 
     @Test
@@ -17,7 +16,7 @@ class SigningHelperTest {
 
         assertThat(
             signed,
-            equalTo("64e07dc8254f55df9a8b73101668ca102e119c2b712ca363d46ad635e1fa2c65")
+            equalTo("64e07dc8254f55df9a8b73101668ca102e119c2b712ca363d46ad635e1fa2c65"),
         )
         assertThat(signed.length, equalTo(64))
         assertThat(signed, matchesRegex("[0-9a-f]{64}"))
@@ -35,9 +34,10 @@ class SigningHelperTest {
 
     @Test
     fun `empty secret triggers wrapper RuntimeException with helpful message`() {
-        val ex = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException::class.java) {
-            signer.sign("anything", "")
-        }
+        val ex =
+            org.junit.jupiter.api.Assertions.assertThrows(RuntimeException::class.java) {
+                signer.sign("anything", "")
+            }
         assertThat(ex.message, equalTo("Unable to sign message."))
     }
 }

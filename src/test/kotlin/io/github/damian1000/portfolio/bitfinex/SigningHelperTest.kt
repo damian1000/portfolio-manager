@@ -7,7 +7,6 @@ import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Test
 
 class SigningHelperTest {
-
     private val signer = SigningHelper()
 
     @Test
@@ -17,7 +16,7 @@ class SigningHelperTest {
 
         assertThat(
             signed,
-            equalTo("511d7b472aa44e498639936680038a5361e7b665c46f8977d3f1c554d9ef929f9f6458e7432cef165e04e1efb0ce1cf2")
+            equalTo("511d7b472aa44e498639936680038a5361e7b665c46f8977d3f1c554d9ef929f9f6458e7432cef165e04e1efb0ce1cf2"),
         )
         assertThat(signed.length, equalTo(96))
         assertThat(signed, matchesRegex("[0-9a-f]{96}"))

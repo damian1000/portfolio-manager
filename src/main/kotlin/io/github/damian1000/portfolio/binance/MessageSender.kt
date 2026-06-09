@@ -13,27 +13,26 @@ class MessageSender(
     private val mapper: ObjectMapper = ObjectMapper(),
     private val propertyHelper: PropertyHelper = PropertyHelper(),
 ) {
-
-    fun sendGetMessage(apiPath: String): String {
-        return sendGetMessage(apiPath, null)
-    }
+    fun sendGetMessage(apiPath: String): String = sendGetMessage(apiPath, null)
 
     fun sendGetMessage(apiPath: String, dataClass: Any?): String {
-        val allQueryParameters = if (dataClass != null) {
-            val parameterMap = mapper.convertValue(dataClass, object : TypeReference<Map<String, Any>>() {})
+        val allQueryParameters =
+            if (dataClass != null) {
+                val parameterMap = mapper.convertValue(dataClass, object : TypeReference<Map<String, Any>>() {})
 
-            val nameValuePairs: List<BasicNameValuePair> = parameterMap
-                .map { entry -> BasicNameValuePair(entry.key, entry.value.toString()) }
+                val nameValuePairs: List<BasicNameValuePair> =
+                    parameterMap
+                        .map { entry -> BasicNameValuePair(entry.key, entry.value.toString()) }
 
-            val apiSecret = propertyHelper.getApiSecret()
-            val queryParameters = WWWFormCodec.format(nameValuePairs, Charset.forName("UTF-8"))
-            val signature = signingHelper.sign(queryParameters, apiSecret)
+                val apiSecret = propertyHelper.getApiSecret()
+                val queryParameters = WWWFormCodec.format(nameValuePairs, Charset.forName("UTF-8"))
+                val signature = signingHelper.sign(queryParameters, apiSecret)
 
-            val allParameters = nameValuePairs.plus(BasicNameValuePair("signature", signature))
-            "?${WWWFormCodec.format(allParameters, Charset.forName("UTF-8"))}"
-        } else {
-            ""
-        }
+                val allParameters = nameValuePairs.plus(BasicNameValuePair("signature", signature))
+                "?${WWWFormCodec.format(allParameters, Charset.forName("UTF-8"))}"
+            } else {
+                ""
+            }
 
         val apiKey = propertyHelper.getApiKey()
         val uri = "https://api.binance.com$apiPath$allQueryParameters"

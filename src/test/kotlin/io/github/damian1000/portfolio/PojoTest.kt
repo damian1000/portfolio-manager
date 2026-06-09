@@ -3,18 +3,18 @@ package io.github.damian1000.portfolio
 import io.github.damian1000.portfolio.binance.Account
 import io.github.damian1000.portfolio.binance.AssetBalance
 import io.github.damian1000.portfolio.binance.BinanceAccountRequest
-import io.github.damian1000.portfolio.binance.Movement as BinanceMovement
-import io.github.damian1000.portfolio.binance.Currency as BinanceCurrency
+import io.github.damian1000.portfolio.bitfinex.BitfinexReadSettingKeys
 import io.github.damian1000.portfolio.bitfinex.BitfinexWallet
 import io.github.damian1000.portfolio.bitfinex.BitfinexWithdrawalRequest
-import io.github.damian1000.portfolio.bitfinex.Currency as BitfinexCurrency
-import io.github.damian1000.portfolio.bitfinex.Movement as BitfinexMovement
-import io.github.damian1000.portfolio.bitfinex.BitfinexReadSettingKeys
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import io.github.damian1000.portfolio.binance.Currency as BinanceCurrency
+import io.github.damian1000.portfolio.binance.Movement as BinanceMovement
+import io.github.damian1000.portfolio.bitfinex.Currency as BitfinexCurrency
+import io.github.damian1000.portfolio.bitfinex.Movement as BitfinexMovement
 
 /**
  * Round-trips the wire-shape models. These are largely Jackson-bound DTOs;
@@ -22,7 +22,6 @@ import java.time.LocalDateTime
  * shows up as a clear test failure rather than as a silent JSON-mapping break.
  */
 class PojoTest {
-
     @Test
     fun `binance account holds asset balances`() {
         val balances = listOf(AssetBalance("BTC", BigDecimal("0.5"), BigDecimal.ZERO))
@@ -73,13 +72,14 @@ class PojoTest {
         val wallet = BitfinexWallet.exchange
         assertNotNull(wallet)
 
-        val withdrawal = BitfinexWithdrawalRequest(
-            wallet = wallet,
-            method = "BTC",
-            amount = "0.10",
-            address = "bc1qaddress",
-            paymentId = "pid-1"
-        )
+        val withdrawal =
+            BitfinexWithdrawalRequest(
+                wallet = wallet,
+                method = "BTC",
+                amount = "0.10",
+                address = "bc1qaddress",
+                paymentId = "pid-1",
+            )
         assertEquals("BTC", withdrawal.method)
         assertEquals(wallet, withdrawal.wallet)
     }

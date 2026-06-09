@@ -8,14 +8,14 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class BitfinexGatewayTest {
-
     private val messageSender = mock<MessageSender>()
     private val mapper = BitfinexMovementMapper()
-    private val gateway = BitfinexGateway(
-        messageSender = messageSender,
-        bitfinexMovementMapper = mapper,
-        paymentIdSupplier = { "fixed-payment-id" },
-    )
+    private val gateway =
+        BitfinexGateway(
+            messageSender = messageSender,
+            bitfinexMovementMapper = mapper,
+            paymentIdSupplier = { "fixed-payment-id" },
+        )
 
     @Test
     fun `retrieveWallets hits the wallets endpoint`() {
@@ -26,7 +26,7 @@ class BitfinexGatewayTest {
     @Test
     fun `retrieveMovementHistory threads currency into apiPath and parses result`() {
         whenever(messageSender.sendMessage("v2/auth/r/movements/BTC/hist")).thenReturn(
-            """[[1,"BTC","BTC",null,null,1640995200000,1640995200000,null,null,"OK",null,null,"0.5",null,null,null,null,null,null,null,null,null]]"""
+            """[[1,"BTC","BTC",null,null,1640995200000,1640995200000,null,null,"OK",null,null,"0.5",null,null,null,null,null,null,null,null,null]]""",
         )
         val movements = gateway.retrieveMovementHistory("BTC")
         assertEquals(1, movements.size)
@@ -54,7 +54,8 @@ class BitfinexGatewayTest {
         val first = captor.firstValue.paymentId
         val second = captor.secondValue.paymentId
         assertEquals(36, first.length, "default supplier produces UUIDs")
-        org.junit.jupiter.api.Assertions.assertNotEquals(first, second, "each call produces a fresh id")
+        org.junit.jupiter.api.Assertions
+            .assertNotEquals(first, second, "each call produces a fresh id")
     }
 
     @Test

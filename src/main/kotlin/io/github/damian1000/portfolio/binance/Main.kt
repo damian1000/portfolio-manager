@@ -9,20 +9,18 @@ fun main(args: Array<String>) {
     exitProcess(run(args))
 }
 
-internal fun run(
-    args: Array<String>,
-    binanceGateway: BinanceGateway = BinanceGateway(),
-): Int {
+internal fun run(args: Array<String>, binanceGateway: BinanceGateway = BinanceGateway()): Int {
     if (args.size < 3) {
         log.error("Usage: binance <currency> <amount> <destinationAddress>")
         return 64
     }
-    val currency = try {
-        Currency.valueOf(args[0])
-    } catch (e: IllegalArgumentException) {
-        log.error("Unknown currency '{}'", args[0])
-        return 64
-    }
+    val currency =
+        try {
+            Currency.valueOf(args[0])
+        } catch (e: IllegalArgumentException) {
+            log.error("Unknown currency '{}'", args[0])
+            return 64
+        }
     val amount = args[1]
     val destinationAddress = args[2]
 

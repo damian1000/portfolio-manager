@@ -2,22 +2,19 @@ package io.github.damian1000.portfolio.bitfinex
 
 import java.math.BigDecimal
 
-data class WithdrawalRequest(
-    val currency: Currency,
-    val amount: String,
-    val destinationAddress: String,
-)
+data class WithdrawalRequest(val currency: Currency, val amount: String, val destinationAddress: String)
 
 sealed class CliResult {
     object NotRequested : CliResult()
+
     data class DryRun(val request: WithdrawalRequest) : CliResult()
+
     data class Confirmed(val request: WithdrawalRequest) : CliResult()
 }
 
 class CliUsageException(message: String) : RuntimeException(message)
 
 object WithdrawalCli {
-
     private const val WITHDRAW_FLAG = "--withdraw"
     private const val CONFIRM_FLAG = "--confirm-withdrawal"
 
@@ -28,17 +25,18 @@ object WithdrawalCli {
         val positional = args.filter { it != WITHDRAW_FLAG && it != CONFIRM_FLAG }
         if (positional.size != 3) {
             throw CliUsageException(
-                "Usage: bitfinex.MainKt --withdraw <currency> <amount> <destinationAddress> [--confirm-withdrawal]"
+                "Usage: bitfinex.MainKt --withdraw <currency> <amount> <destinationAddress> [--confirm-withdrawal]",
             )
         }
 
-        val currency = try {
-            Currency.valueOf(positional[0])
-        } catch (e: IllegalArgumentException) {
-            throw CliUsageException(
-                "Unsupported currency '${positional[0]}'. Allowed: ${Currency.entries.joinToString { it.name }}"
-            )
-        }
+        val currency =
+            try {
+                Currency.valueOf(positional[0])
+            } catch (e: IllegalArgumentException) {
+                throw CliUsageException(
+                    "Unsupported currency '${positional[0]}'. Allowed: ${Currency.entries.joinToString { it.name }}",
+                )
+            }
 
         val amount = positional[1]
         validateAmount(amount)
@@ -53,11 +51,12 @@ object WithdrawalCli {
     }
 
     private fun validateAmount(amount: String) {
-        val parsed = try {
-            BigDecimal(amount)
-        } catch (e: NumberFormatException) {
-            throw CliUsageException("Amount '$amount' is not a valid number")
-        }
+        val parsed =
+            try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                throw CliUsageException("Amount '$amount' is not a valid number")
+            }
         if (parsed.signum() <= 0) {
             throw CliUsageException("Amount must be positive, got: $amount")
         }

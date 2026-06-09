@@ -12,7 +12,6 @@ import org.mockito.kotlin.whenever
 import java.io.ByteArrayOutputStream
 
 class BitfinexMainTest {
-
     private fun stubGateway(): BitfinexGateway {
         val gateway = mock<BitfinexGateway>()
         whenever(gateway.retrieveWallets()).thenReturn("[]")
@@ -30,12 +29,13 @@ class BitfinexMainTest {
     @Test
     fun `bad arguments exit 64`() {
         val audit = ByteArrayOutputStream()
-        val exit = run(
-            args = arrayOf("--withdraw", "BTC", "0"),
-            bitfinexGateway = stubGateway(),
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { WithdrawalAuditLog(audit) },
-        )
+        val exit =
+            run(
+                args = arrayOf("--withdraw", "BTC", "0"),
+                bitfinexGateway = stubGateway(),
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { WithdrawalAuditLog(audit) },
+            )
         assertEquals(64, exit)
         assertEquals(0, audit.size(), "no audit record for usage errors")
     }
@@ -44,12 +44,13 @@ class BitfinexMainTest {
     fun `dry run does not submit withdrawal and exits 0`() {
         val gateway = stubGateway()
         val audit = ByteArrayOutputStream()
-        val exit = run(
-            args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress"),
-            bitfinexGateway = gateway,
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { WithdrawalAuditLog(audit) },
-        )
+        val exit =
+            run(
+                args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress"),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { WithdrawalAuditLog(audit) },
+            )
         assertEquals(0, exit)
         verify(gateway, never()).submitWithdrawalRequest(any(), any(), any())
         val text = audit.toString().trim()
@@ -64,12 +65,13 @@ class BitfinexMainTest {
             .thenReturn("submitted-ok")
         val audit = ByteArrayOutputStream()
 
-        val exit = run(
-            args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress", "--confirm-withdrawal"),
-            bitfinexGateway = gateway,
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { WithdrawalAuditLog(audit) },
-        )
+        val exit =
+            run(
+                args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress", "--confirm-withdrawal"),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { WithdrawalAuditLog(audit) },
+            )
 
         assertEquals(0, exit)
         verify(gateway).submitWithdrawalRequest(Currency.BTC, "0.10", "bc1qexampleaddress")
@@ -85,12 +87,13 @@ class BitfinexMainTest {
             .thenThrow(RuntimeException("network down"))
         val audit = ByteArrayOutputStream()
 
-        val exit = run(
-            args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress", "--confirm-withdrawal"),
-            bitfinexGateway = gateway,
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { WithdrawalAuditLog(audit) },
-        )
+        val exit =
+            run(
+                args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress", "--confirm-withdrawal"),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { WithdrawalAuditLog(audit) },
+            )
 
         assertEquals(1, exit)
         val text = audit.toString()
@@ -102,12 +105,13 @@ class BitfinexMainTest {
     @Test
     fun `no withdrawal flag runs read-only and exits 0`() {
         val gateway = stubGateway()
-        val exit = run(
-            args = emptyArray(),
-            bitfinexGateway = gateway,
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { error("audit should not open without withdrawal request") },
-        )
+        val exit =
+            run(
+                args = emptyArray(),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { error("audit should not open without withdrawal request") },
+            )
         assertEquals(0, exit)
         verify(gateway, never()).submitWithdrawalRequest(any(), any(), any())
     }
@@ -116,12 +120,13 @@ class BitfinexMainTest {
     fun `read failure produces exit 1 with no withdrawal flag`() {
         val gateway = mock<BitfinexGateway>()
         whenever(gateway.retrieveWallets()).thenThrow(RuntimeException("boom"))
-        val exit = run(
-            args = emptyArray(),
-            bitfinexGateway = gateway,
-            propertyHelper = stubPropertyHelper(),
-            auditLogFactory = { error("audit should not open without withdrawal request") },
-        )
+        val exit =
+            run(
+                args = emptyArray(),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { error("audit should not open without withdrawal request") },
+            )
         assertEquals(1, exit)
     }
 }

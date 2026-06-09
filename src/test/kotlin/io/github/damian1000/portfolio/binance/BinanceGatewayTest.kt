@@ -10,7 +10,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class BinanceGatewayTest {
-
     private val messageSender = mock<MessageSender>()
     private val gateway = BinanceGateway(messageSender)
 

@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.3.21'
     id 'application'
     id 'jacoco'
+    id 'com.diffplug.spotless' version '7.0.4'
 }
 
 group = 'com.example'
@@ -71,24 +72,65 @@ test {
     finalizedBy jacocoTestReport
 }
 
+// Coverage configuration shared between report and verification. Excludes:
+//   * MainKt              — top-level CLI mains that call live exchange APIs
+//   * HttpMessageSender*  — Apache HttpClient wrapper + its Companion factory
+//   * HttpRequestFailed*  — exception class (fields only)
+//   * WithdrawalAuditLog$Companion — file-system audit-log factory (openDefault)
+def coverageExcludes = [
+    '**/MainKt.class',
+    '**/HttpMessageSender*.class',
+    '**/HttpRequestFailed*.class',
+    '**/WithdrawalAuditLog$Companion.class',
+]
+
 jacocoTestReport {
     dependsOn test
     reports {
         xml.required = true
         html.required = true
     }
-    // Exclude genuinely-untestable code from coverage reporting:
-    //   * MainKt — top-level CLI mains that call live exchange APIs
-    //   * HttpMessageSender — wraps Apache HttpClient with real network I/O
     afterEvaluate {
         classDirectories.setFrom(
             files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: [
-                    '**/MainKt.class',
-                    '**/HttpMessageSender.class'
-                ])
+                fileTree(dir: it, exclude: coverageExcludes)
             })
         )
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    afterEvaluate {
+        classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: coverageExcludes)
+            })
+        )
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+spotless {
+    kotlin {
+        target 'src/**/*.kt'
+        ktlint('1.5.0').editorConfigOverride([
+            'max_line_length': '160',
+        ])
+    }
+    kotlinGradle {
+        target '*.gradle.kts'
+        ktlint('1.5.0')
     }
 }
 

@@ -1,9 +1,8 @@
 # Portfolio Manager
 
 [![CI](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/damian1000/portfolio-manager/actions/workflows/codeql.yml/badge.svg)](https://github.com/damian1000/portfolio-manager/actions/workflows/codeql.yml)
 [![codecov](https://codecov.io/gh/damian1000/portfolio-manager/graph/badge.svg)](https://codecov.io/gh/damian1000/portfolio-manager)
-[![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blueviolet)](https://kotlinlang.org/)
-[![JDK](https://img.shields.io/badge/jdk-25-orange)](https://openjdk.org/projects/jdk/25/)
 
 Two Kotlin **venue-local exchange clients** — `BinanceGateway` and `BitfinexGateway` — that read wallet balances and movement history from **Binance** and **Bitfinex** via their authenticated REST APIs. They share neither a base class nor an interface; what they share is shape and approach, not types. A third exchange would be one new package, modeled on the existing two.
 

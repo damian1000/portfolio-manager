@@ -6,13 +6,15 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class PropertyHelperTest {
-
     @Test
     fun `returns env values when present`() {
-        val helper = PropertyHelper(env = mapOf(
-            "BITFINEX_API_KEY" to "bf-key",
-            "BITFINEX_API_SECRET" to "bf-secret",
-        )::get)
+        val helper =
+            PropertyHelper(
+                env = mapOf(
+                    "BITFINEX_API_KEY" to "bf-key",
+                    "BITFINEX_API_SECRET" to "bf-secret",
+                )::get,
+            )
         assertEquals("bf-key", helper.getApiKey())
         assertEquals("bf-secret", helper.getApiSecret())
     }

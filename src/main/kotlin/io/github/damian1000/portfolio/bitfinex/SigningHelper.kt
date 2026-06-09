@@ -7,18 +7,17 @@ import javax.crypto.spec.SecretKeySpec
 
 class SigningHelper {
 
+    @Suppress("PropertyName")
     private val HMAC_SHA1_ALGORITHM = "HmacSHA384"
 
-    fun sign(message: String, apiSecret: String): String {
-        return try {
-            val mac = Mac.getInstance(HMAC_SHA1_ALGORITHM)
-            mac.init(SecretKeySpec(apiSecret.toByteArray(), HMAC_SHA1_ALGORITHM))
-            bytesToHex(mac.doFinal(message.toByteArray()))
-        } catch (e: InvalidKeyException) {
-            throw RuntimeException(e)
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        }
+    fun sign(message: String, apiSecret: String): String = try {
+        val mac = Mac.getInstance(HMAC_SHA1_ALGORITHM)
+        mac.init(SecretKeySpec(apiSecret.toByteArray(), HMAC_SHA1_ALGORITHM))
+        bytesToHex(mac.doFinal(message.toByteArray()))
+    } catch (e: InvalidKeyException) {
+        throw RuntimeException(e)
+    } catch (e: NoSuchAlgorithmException) {
+        throw RuntimeException(e)
     }
 
     private fun bytesToHex(hash: ByteArray): String {
@@ -32,5 +31,4 @@ class SigningHelper {
         }
         return hexString.toString()
     }
-
 }

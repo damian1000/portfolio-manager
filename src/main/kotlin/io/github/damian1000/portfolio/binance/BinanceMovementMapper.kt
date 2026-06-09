@@ -9,25 +9,28 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 class BinanceMovementMapper {
-
     private val mapper = jacksonObjectMapper()
 
     fun mapMovement(json: String): List<Movement> {
         val transfers = mutableListOf<Movement>()
         try {
-            val history:List<List<Any?>> = mapper.readValue(json);
+            val history: List<List<Any?>> = mapper.readValue(json)
             for (binanceTransfer in history) {
                 val transfer = Movement()
                 transfers.add(transfer)
                 transfer.id = binanceTransfer.required(ID_INDEX).toString().toLong()
                 transfer.currencyCode = binanceTransfer.optionalString(CURRENCY_CODE_INDEX)
                 transfer.currencyValue = binanceTransfer.optionalString(CURRENCY_VALUE_INDEX)
-                transfer.createdTimestamp = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(binanceTransfer.required(CREATED_TIMESTAMP_INDEX).toString().toLong()),
-                    ZoneId.of("UTC"));
-                transfer.updatedTimestamp = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(binanceTransfer.required(UPDATED_TIMESTAMP_INDEX).toString().toLong()),
-                    ZoneId.of("UTC"));
+                transfer.createdTimestamp =
+                    LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(binanceTransfer.required(CREATED_TIMESTAMP_INDEX).toString().toLong()),
+                        ZoneId.of("UTC"),
+                    )
+                transfer.updatedTimestamp =
+                    LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(binanceTransfer.required(UPDATED_TIMESTAMP_INDEX).toString().toLong()),
+                        ZoneId.of("UTC"),
+                    )
                 transfer.status = binanceTransfer.optionalString(STATUS_INDEX)
                 transfer.amount = binanceTransfer.optionalBigDecimal(AMOUNT_INDEX)
                 transfer.fees = binanceTransfer.optionalBigDecimal(FEES_INDEX)
@@ -54,13 +57,10 @@ class BinanceMovementMapper {
         private const val TRANSACTION_ID_INDEX = 20
         private const val NOTE_INDEX = 21
 
-        private fun List<Any?>.required(index: Int): Any =
-            getOrNull(index) ?: throw IllegalArgumentException("Binance movement field $index is missing")
+        private fun List<Any?>.required(index: Int): Any = getOrNull(index) ?: throw IllegalArgumentException("Binance movement field $index is missing")
 
-        private fun List<Any?>.optionalString(index: Int): String? =
-            getOrNull(index)?.toString()
+        private fun List<Any?>.optionalString(index: Int): String? = getOrNull(index)?.toString()
 
-        private fun List<Any?>.optionalBigDecimal(index: Int): BigDecimal? =
-            getOrNull(index)?.toString()?.let(::BigDecimal)
+        private fun List<Any?>.optionalBigDecimal(index: Int): BigDecimal? = getOrNull(index)?.toString()?.let(::BigDecimal)
     }
 }

@@ -7,15 +7,17 @@ import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 
 class WithdrawalAuditLogTest {
-
     @Test
     fun `record writes a tab-separated line with redacted address`() {
         val sink = ByteArrayOutputStream()
         WithdrawalAuditLog(sink).use {
             it.record(
                 mode = "DRY_RUN",
-                request = WithdrawalRequest(
-                    Currency.BTC, "0.10", "bc1qexampleaddressx9",
+                request =
+                WithdrawalRequest(
+                    Currency.BTC,
+                    "0.10",
+                    "bc1qexampleaddressx9",
                 ),
                 outcome = "not submitted",
             )

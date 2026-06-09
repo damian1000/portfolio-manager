@@ -11,53 +11,42 @@ import org.apache.hc.core5.http.io.entity.StringEntity
 import org.apache.hc.core5.util.Timeout
 import java.net.URI
 
-class HttpMessageSender(
-    private val client: CloseableHttpClient = defaultClient(),
-) : AutoCloseable {
-
-    fun sendPostMessage(
-        url: String,
-        nonce: String,
-        apiKey: String,
-        signedSignature: String,
-        body: String,
-    ): String {
+class HttpMessageSender(private val client: CloseableHttpClient = defaultClient()) : AutoCloseable {
+    fun sendPostMessage(url: String, nonce: String, apiKey: String, signedSignature: String, body: String): String {
         val request = HttpPost(url)
         request.addHeader("Content-Type", "application/json")
         request.addHeader("bfx-nonce", nonce)
         request.addHeader("bfx-apikey", apiKey)
         request.addHeader("bfx-signature", signedSignature)
         request.entity = StringEntity(body, ContentType.APPLICATION_JSON)
-        return client.execute(request, HttpClientResponseHandler { response ->
-            val responseBody = EntityUtils.toString(response.entity)
-            if (response.code !in 200..299) {
-                throw HttpRequestFailed(safeEndpoint(url), response.code, response.reasonPhrase)
-            }
-            responseBody
-        })
+        return client.execute(
+            request,
+            HttpClientResponseHandler { response ->
+                val responseBody = EntityUtils.toString(response.entity)
+                if (response.code !in 200..299) {
+                    throw HttpRequestFailed(safeEndpoint(url), response.code, response.reasonPhrase)
+                }
+                responseBody
+            },
+        )
     }
 
     override fun close() = client.close()
 
-    private fun safeEndpoint(url: String): String =
-        runCatching { URI(url).let { "${it.host}${it.path}" } }.getOrDefault("<unparseable>")
+    private fun safeEndpoint(url: String): String = runCatching { URI(url).let { "${it.host}${it.path}" } }.getOrDefault("<unparseable>")
 
     companion object {
-        private fun defaultClient(): CloseableHttpClient =
-            HttpClients.custom()
-                .setDefaultRequestConfig(
-                    RequestConfig.custom()
-                        .setConnectTimeout(Timeout.ofSeconds(2))
-                        .setResponseTimeout(Timeout.ofSeconds(5))
-                        .setConnectionRequestTimeout(Timeout.ofSeconds(1))
-                        .build()
-                )
-                .build()
+        private fun defaultClient(): CloseableHttpClient = HttpClients
+            .custom()
+            .setDefaultRequestConfig(
+                RequestConfig
+                    .custom()
+                    .setConnectTimeout(Timeout.ofSeconds(2))
+                    .setResponseTimeout(Timeout.ofSeconds(5))
+                    .setConnectionRequestTimeout(Timeout.ofSeconds(1))
+                    .build(),
+            ).build()
     }
 }
 
-class HttpRequestFailed(
-    val endpoint: String,
-    val status: Int,
-    val reason: String?,
-) : RuntimeException("HTTP $status ($reason) at $endpoint")
+class HttpRequestFailed(val endpoint: String, val status: Int, val reason: String?) : RuntimeException("HTTP $status ($reason) at $endpoint")

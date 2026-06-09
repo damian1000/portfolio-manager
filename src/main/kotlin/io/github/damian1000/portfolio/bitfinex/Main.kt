@@ -15,18 +15,20 @@ internal fun run(
     propertyHelper: PropertyHelper = PropertyHelper(),
     auditLogFactory: () -> WithdrawalAuditLog = WithdrawalAuditLog::openDefault,
 ): Int {
-    val cliResult = try {
-        WithdrawalCli.parse(args)
-    } catch (e: CliUsageException) {
-        log.error("Invalid arguments: {}", e.message)
-        return 64
-    }
+    val cliResult =
+        try {
+            WithdrawalCli.parse(args)
+        } catch (e: CliUsageException) {
+            log.error("Invalid arguments: {}", e.message)
+            return 64
+        }
 
-    val readCurrency = when (cliResult) {
-        is CliResult.NotRequested -> Currency.BTC
-        is CliResult.DryRun -> cliResult.request.currency
-        is CliResult.Confirmed -> cliResult.request.currency
-    }
+    val readCurrency =
+        when (cliResult) {
+            is CliResult.NotRequested -> Currency.BTC
+            is CliResult.DryRun -> cliResult.request.currency
+            is CliResult.Confirmed -> cliResult.request.currency
+        }
     val readOk = readPortfolio(bitfinexGateway, propertyHelper, readCurrency)
 
     return when (cliResult) {
@@ -37,9 +39,13 @@ internal fun run(
             if (readOk) 0 else 1
         }
         is CliResult.Confirmed -> {
-            val withdrawExitCode = submitWithdrawal(
-                bitfinexGateway, propertyHelper, cliResult.request, auditLogFactory,
-            )
+            val withdrawExitCode =
+                submitWithdrawal(
+                    bitfinexGateway,
+                    propertyHelper,
+                    cliResult.request,
+                    auditLogFactory,
+                )
             when {
                 withdrawExitCode != 0 -> withdrawExitCode
                 readOk -> 0
@@ -52,15 +58,13 @@ internal fun run(
 private fun logDryRun(request: WithdrawalRequest) {
     log.info(
         "[DRY-RUN] would submit withdrawal: currency={} amount={} destination={} (pass --confirm-withdrawal to send)",
-        request.currency, request.amount, WithdrawalCli.redactAddress(request.destinationAddress),
+        request.currency,
+        request.amount,
+        WithdrawalCli.redactAddress(request.destinationAddress),
     )
 }
 
-private fun readPortfolio(
-    gateway: BitfinexGateway,
-    propertyHelper: PropertyHelper,
-    currency: Currency,
-): Boolean = try {
+private fun readPortfolio(gateway: BitfinexGateway, propertyHelper: PropertyHelper, currency: Currency): Boolean = try {
     log.info("wallets: {}", gateway.retrieveWallets())
     gateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
     log.info("settings: {}", gateway.retrieveSettingsForKey(propertyHelper.getApiKey()))
@@ -78,12 +82,17 @@ private fun submitWithdrawal(
 ): Int {
     log.warn(
         "[LIVE] submitting withdrawal: currency={} amount={} destination={}",
-        request.currency, request.amount, WithdrawalCli.redactAddress(request.destinationAddress),
+        request.currency,
+        request.amount,
+        WithdrawalCli.redactAddress(request.destinationAddress),
     )
     return try {
-        val response = gateway.submitWithdrawalRequest(
-            request.currency, request.amount, request.destinationAddress,
-        )
+        val response =
+            gateway.submitWithdrawalRequest(
+                request.currency,
+                request.amount,
+                request.destinationAddress,
+            )
         log.info("withdrawal response: {}", response)
         auditLogFactory().use { it.record("LIVE", request, "submitted: $response") }
         readPortfolio(gateway, propertyHelper, request.currency)
