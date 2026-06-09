@@ -4,6 +4,7 @@ plugins {
     id 'application'
     id 'jacoco'
     id 'com.diffplug.spotless' version '7.0.4'
+    id 'org.owasp.dependencycheck' version '12.1.0'
 }
 
 group = 'com.example'
@@ -137,4 +138,17 @@ spotless {
 application {
     // Kotlin main in src/main/kotlin/io/github/damian1000/portfolio/binance/Main.kt
     mainClass = 'io.github.damian1000.portfolio.binance.MainKt'
+}
+
+// OWASP dependency vulnerability scanner. Run: ./gradlew dependencyCheckAnalyze
+// Fails the build on any dependency with CVSS >= 7.0.
+dependencyCheck {
+    failBuildOnCVSS = 7.0f
+    formats = ['HTML', 'JSON']
+    analyzers {
+        assemblyEnabled = false
+        nodeEnabled = false
+        nodeAuditEnabled = false
+        nuspecEnabled = false
+    }
 }
