@@ -5,13 +5,13 @@
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blueviolet)](https://kotlinlang.org/)
 [![JDK](https://img.shields.io/badge/jdk-25-orange)](https://openjdk.org/projects/jdk/25/)
 
-A Kotlin tool for **multi-venue position aggregation**. Pulls wallet balances and movement history from **Binance** and **Bitfinex** through their authenticated REST APIs, with a venue-agnostic gateway abstraction so a third exchange would be one new package, not a rewrite.
+Two Kotlin **venue-local exchange clients** — `BinanceGateway` and `BitfinexGateway` — that read wallet balances and movement history from **Binance** and **Bitfinex** via their authenticated REST APIs. They share neither a base class nor an interface; what they share is shape and approach, not types. A third exchange would be one new package, modeled on the existing two.
 
 ## What it demonstrates
 
-- **Multi-venue connectivity** — a `Gateway` per exchange (Binance, Bitfinex) with a common shape (`balances()`, `movements(currency)`, `submitWithdrawalRequest(...)`)
+- **Per-venue gateways** — `BinanceGateway` covers system status / wallets; `BitfinexGateway` covers wallets, movements, settings, and (opt-in) withdrawals. Each is concrete and venue-local — no shared `Gateway` interface.
 - **`MessageSender` boundary** — HTTP is behind an interface, so signing logic, request building, and response mapping are unit-testable with no network (see `binance/MessageSender.kt`, `bitfinex/MessageSender.kt`)
-- **Withdrawal safety** — the live `submitWithdrawalRequest` path requires the explicit `--withdraw` command. Mistakes here cost money, so the default is "look, don't touch"
+- **Withdrawal safety** — Bitfinex's `--withdraw` CLI is dry-run by default; an actual submission requires the explicit `--confirm-withdrawal` flag, and every attempt is appended to a redacted audit log. Mistakes here cost money, so the bar is "you have to mean it".
 - **Secret handling** — API key/secret read from env vars only. No creds in code, no creds in committed config, no creds in the JAR
 - **Per-venue request signing** — HMAC-SHA256 (Binance) and HMAC-SHA384 (Bitfinex), each with a unit-tested signer
 
@@ -19,18 +19,18 @@ A Kotlin tool for **multi-venue position aggregation**. Pulls wallet balances an
 
 ```
    ┌─────────────────────┐                ┌──────────────────┐
-   │  binance.Gateway    │───────────────▶│ Binance REST     │
+   │  BinanceGateway     │───────────────▶│ Binance REST     │
    │   ├─ MessageSender  │  signed HTTP   │ api.binance.com  │
    │   └─ SigningHelper  │                └──────────────────┘
    └─────────────────────┘
    ┌─────────────────────┐                ┌──────────────────┐
-   │  bitfinex.Gateway   │───────────────▶│ Bitfinex REST    │
+   │  BitfinexGateway    │───────────────▶│ Bitfinex REST    │
    │   ├─ MessageSender  │  signed HTTP   │ api.bitfinex.com │
    │   └─ SigningHelper  │                └──────────────────┘
    └─────────────────────┘
 ```
 
-Each venue lives in its own package — no shared "base client" inheritance, no premature unification. The shared shape is the `Gateway` interface; signing differs by venue and is kept local to it.
+Each venue lives in its own package — no shared "base client" inheritance, no premature unification. The two gateways look similar but are deliberately independent; if a `Portfolio` aggregation layer is ever added it would compose them, not generalise them.
 
 ## Prerequisites
 
@@ -76,11 +76,24 @@ For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfi
 2. List recent movements for a currency
 3. Print API key permissions
 
-Withdrawal is opt-in:
+Withdrawal is opt-in **and dry-run by default**:
 
 ```bash
+# Dry run (default): logs the redacted intent + writes a DRY_RUN audit row, no network call.
 ./gradlew run --args="--withdraw BTC 0.01 destination-address"
+
+# Actually submit. Requires the explicit confirm flag — easy to omit, by design.
+./gradlew run --args="--withdraw BTC 0.01 destination-address --confirm-withdrawal"
 ```
+
+Every withdrawal attempt (dry-run or live) appends a tab-separated row to
+`~/.portfolio-manager/bitfinex-withdrawals.log` (override with `PORTFOLIO_AUDIT_DIR`).
+Destination addresses are redacted in both logs and the audit file
+(`bc1q***x9` style); the full address is only ever sent to the exchange.
+
+Exit codes follow the BSD `sysexits.h` convention: `64` on bad arguments
+(unknown currency, non-positive amount, blank address), `1` on read or
+submission failure, `0` on success.
 
 ## Tests
 
