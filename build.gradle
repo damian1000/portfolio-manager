@@ -54,8 +54,8 @@ dependencies {
     runtimeOnly "org.slf4j:slf4j-simple:2.0.17"
 
     // Lombok (compile-time only)
-    compileOnly "org.projectlombok:lombok:1.18.42"
-    annotationProcessor "org.projectlombok:lombok:1.18.42"
+    compileOnly "org.projectlombok:lombok:1.18.46"
+    annotationProcessor "org.projectlombok:lombok:1.18.46"
 
     // Testing (JUnit 6 via BOM)
     testImplementation platform("org.junit:junit-bom:6.1.0")
