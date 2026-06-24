@@ -2,9 +2,11 @@ package io.github.damian1000.portfolio.binance
 
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.config.RequestConfig
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder
 import org.apache.hc.core5.http.ContentType
 import org.apache.hc.core5.http.io.HttpClientResponseHandler
 import org.apache.hc.core5.http.io.entity.EntityUtils
@@ -44,16 +46,26 @@ class HttpMessageSender(private val client: CloseableHttpClient = defaultClient(
     private fun safeEndpoint(url: String): String = runCatching { URI(url).let { "${it.host}${it.path}" } }.getOrDefault("<unparseable>")
 
     companion object {
-        private fun defaultClient(): CloseableHttpClient = HttpClients
-            .custom()
-            .setDefaultRequestConfig(
-                RequestConfig
-                    .custom()
-                    .setConnectTimeout(Timeout.ofSeconds(2))
-                    .setResponseTimeout(Timeout.ofSeconds(5))
-                    .setConnectionRequestTimeout(Timeout.ofSeconds(1))
-                    .build(),
-            ).build()
+        private fun defaultClient(): CloseableHttpClient {
+            val connectionManager = PoolingHttpClientConnectionManagerBuilder
+                .create()
+                .setDefaultConnectionConfig(
+                    ConnectionConfig
+                        .custom()
+                        .setConnectTimeout(Timeout.ofSeconds(2))
+                        .build(),
+                ).build()
+            return HttpClients
+                .custom()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(
+                    RequestConfig
+                        .custom()
+                        .setResponseTimeout(Timeout.ofSeconds(5))
+                        .setConnectionRequestTimeout(Timeout.ofSeconds(1))
+                        .build(),
+                ).build()
+        }
     }
 }
 

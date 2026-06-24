@@ -5,4 +5,3 @@
 - Add per-venue rate-limit handling and retry policy (exchange-specific headers/codes).
 - Replace raw `String` gateway responses with typed response models.
 - Add recorded-response contract tests against saved exchange payloads.
-- Migrate Apache HttpClient `RequestConfig.setConnectTimeout` (deprecated) to `ConnectionConfig` on the connection manager (both `binance/HttpMessageSender.kt` and `bitfinex/HttpMessageSender.kt`).
