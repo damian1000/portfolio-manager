@@ -114,7 +114,6 @@ The test suite runs without network access, exchange credentials, or environment
 
 - **Why no shared HTTP base?** Each venue has its own quirks — Binance puts the signature in the query string, Bitfinex in a header with a nonce. A shared base ends up as a soup of `if (venue == ...)` branches. One package per venue keeps quirks local.
 - **Why `MessageSender` as an interface?** So the signer/payload-builder is testable without spinning up a mock HTTP server. The real `HttpMessageSender` is a thin Apache HttpClient wrapper.
-- **What's missing for production?** A position keeper that reconciles balances against an internal ledger, idempotency keys on withdrawals, rate-limit handling per venue, and structured audit logs on every authenticated call (today only withdrawals are audited). The current shape is a CLI demonstrator, not a production position service.
 
 ## Stack
 
