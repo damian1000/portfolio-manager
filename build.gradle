@@ -79,10 +79,9 @@ test {
 //   * HttpRequestFailed*  — exception class (fields only)
 //   * WithdrawalAuditLog$Companion — file-system audit-log factory (openDefault)
 def coverageExcludes = [
+    // CLI entry points only: `main` runs the app and calls System.exit, which
+    // can't be exercised in a unit test. Everything else is covered by tests.
     '**/MainKt.class',
-    '**/HttpMessageSender*.class',
-    '**/HttpRequestFailed*.class',
-    '**/WithdrawalAuditLog$Companion.class',
 ]
 
 jacocoTestReport {
