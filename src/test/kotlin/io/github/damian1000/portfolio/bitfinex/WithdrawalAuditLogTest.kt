@@ -3,8 +3,11 @@ package io.github.damian1000.portfolio.bitfinex
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 
 class WithdrawalAuditLogTest {
     @Test
@@ -49,5 +52,21 @@ class WithdrawalAuditLogTest {
         val nonTrailingNewlines = text.trimEnd('\n').count { it == '\n' }
         assertEquals(0, nonTrailingNewlines, "embedded newlines should be replaced")
         assertTrue(text.contains("line one line two"))
+    }
+
+    @Test
+    fun `openDefault creates the log directory under user home and appends`(@TempDir tmp: Path) {
+        val originalHome = System.getProperty("user.home")
+        System.setProperty("user.home", tmp.toString())
+        try {
+            WithdrawalAuditLog.openDefault().use {
+                it.record("DRY_RUN", WithdrawalRequest(Currency.BTC, "0.10", "bc1qaddress"), "ok")
+            }
+            val logFile = tmp.resolve(".portfolio-manager/bitfinex-withdrawals.log")
+            assertTrue(Files.exists(logFile), "audit log should be created under the home directory")
+            assertTrue(Files.readString(logFile).contains("DRY_RUN"))
+        } finally {
+            System.setProperty("user.home", originalHome)
+        }
     }
 }
