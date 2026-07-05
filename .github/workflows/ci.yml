@@ -20,7 +20,12 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: "25"
+
+      - name: Set up Node # Prettier (config/docs formatting) runs under Spotless
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6

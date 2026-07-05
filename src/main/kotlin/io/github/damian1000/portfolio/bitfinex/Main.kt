@@ -39,17 +39,19 @@ internal fun run(
             if (readOk) 0 else 1
         }
         is CliResult.Confirmed -> {
-            val withdrawExitCode =
+            // The read doubles as a pre-flight check: if the venue can't even be read (auth,
+            // connectivity), don't attempt to move money — abort loudly and leave an audit trail.
+            if (!readOk) {
+                log.error("Aborting withdrawal: the pre-flight portfolio read failed; nothing was submitted")
+                auditLogFactory().use { it.record("LIVE", cliResult.request, "aborted: pre-flight read failed") }
+                1
+            } else {
                 submitWithdrawal(
                     bitfinexGateway,
                     propertyHelper,
                     cliResult.request,
                     auditLogFactory,
                 )
-            when {
-                withdrawExitCode != 0 -> withdrawExitCode
-                readOk -> 0
-                else -> 1
             }
         }
     }
