@@ -29,7 +29,7 @@ Two Kotlin **venue-local exchange clients** — `BinanceGateway` and `BitfinexGa
    └─────────────────────┘
 ```
 
-Each venue lives in its own package — no shared "base client" inheritance, no premature unification. The two gateways look similar but are deliberately independent; if a `Portfolio` aggregation layer is ever added it would compose them, not generalise them.
+Each venue lives in its own package — no shared "base client" inheritance, no premature unification. The two gateways look similar but stay independent; if a `Portfolio` aggregation layer is ever added it would compose them rather than generalise them.
 
 ## Prerequisites
 
