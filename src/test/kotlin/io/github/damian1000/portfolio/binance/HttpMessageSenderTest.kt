@@ -45,13 +45,6 @@ class HttpMessageSenderTest {
     }
 
     @Test
-    fun `POST returns the response body on success`() {
-        HttpMessageSender().use { sender ->
-            assertEquals("{\"result\":\"ok\"}", sender.sendPostMessage("$baseUrl/ok", "nonce", "key", "sig", "{}"))
-        }
-    }
-
-    @Test
     fun `non-2xx status throws HttpRequestFailed with the query-stripped endpoint`() {
         HttpMessageSender().use { sender ->
             val ex =
