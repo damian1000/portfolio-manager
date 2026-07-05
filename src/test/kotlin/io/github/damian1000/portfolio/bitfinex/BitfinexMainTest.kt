@@ -103,6 +103,25 @@ class BitfinexMainTest {
     }
 
     @Test
+    fun `confirmed withdrawal aborts when the pre-flight read fails`() {
+        val gateway = mock<BitfinexGateway>()
+        whenever(gateway.retrieveWallets()).thenThrow(RuntimeException("auth rejected"))
+        val audit = ByteArrayOutputStream()
+
+        val exit =
+            run(
+                args = arrayOf("--withdraw", "BTC", "0.10", "bc1qexampleaddress", "--confirm-withdrawal"),
+                bitfinexGateway = gateway,
+                propertyHelper = stubPropertyHelper(),
+                auditLogFactory = { WithdrawalAuditLog(audit) },
+            )
+
+        assertEquals(1, exit)
+        verify(gateway, never()).submitWithdrawalRequest(any(), any(), any())
+        assertTrue(audit.toString().contains("aborted: pre-flight read failed"))
+    }
+
+    @Test
     fun `no withdrawal flag runs read-only and exits 0`() {
         val gateway = stubGateway()
         val exit =

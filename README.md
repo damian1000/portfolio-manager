@@ -52,11 +52,11 @@ cp .env.example .env
 # edit .env, then `source .env` (or use direnv)
 ```
 
-| Variable | Used by |
-|---|---|
-| `BINANCE_API_KEY` | Binance |
-| `BINANCE_API_SECRET` | Binance |
-| `BITFINEX_API_KEY` | Bitfinex |
+| Variable              | Used by  |
+| --------------------- | -------- |
+| `BINANCE_API_KEY`     | Binance  |
+| `BINANCE_API_SECRET`  | Binance  |
+| `BITFINEX_API_KEY`    | Bitfinex |
 | `BITFINEX_API_SECRET` | Bitfinex |
 
 > **Use read-only API keys when exploring.** Withdrawal endpoints need explicit trade/withdraw scopes. Only enable those scopes when you actually intend to call `submitWithdrawalRequest`.
