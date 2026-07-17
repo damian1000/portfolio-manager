@@ -75,7 +75,9 @@ For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfi
 2. List recent movements for a currency
 3. Print API key permissions
 
-Withdrawal is opt-in **and dry-run by default**:
+Withdrawal is opt-in **and dry-run by default**. These commands run the Bitfinex CLI, so they
+require `mainClass` in `build.gradle` switched to
+`io.github.damian1000.portfolio.bitfinex.MainKt` first — as-is, `run` boots the Binance side:
 
 ```bash
 # Dry run (default): logs the redacted intent + writes a DRY_RUN audit row, no network call.
