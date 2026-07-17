@@ -6,10 +6,10 @@
 
 Two Kotlin **venue-local exchange clients** — `BinanceGateway` and `BitfinexGateway` — that read wallet balances and movement history from **Binance** and **Bitfinex** via their authenticated REST APIs. They share neither a base class nor an interface; what they share is shape and approach, not types. A third exchange would be one new package, modeled on the existing two.
 
-## What it demonstrates
+## Gateway design and safety
 
 - **Per-venue gateways** — `BinanceGateway` covers system status / wallets; `BitfinexGateway` covers wallets, movements, settings, and (opt-in) withdrawals. Each is concrete and venue-local — no shared `Gateway` interface.
-- **`MessageSender` boundary** — HTTP is behind an interface, so signing logic, request building, and response mapping are unit-testable with no network (see `binance/MessageSender.kt`, `bitfinex/MessageSender.kt`)
+- **`MessageSender` boundary** — HTTP is behind a class with an injectable `HttpMessageSender` collaborator, so signing logic, request building, and response mapping are unit-testable with no network (see `binance/MessageSender.kt`, `bitfinex/MessageSender.kt`)
 - **Withdrawal safety** — Bitfinex's `--withdraw` CLI is dry-run by default; an actual submission requires the explicit `--confirm-withdrawal` flag, and every attempt is appended to a redacted audit log. Mistakes here cost money, so the bar is "you have to mean it".
 - **Secret handling** — API key/secret read from env vars only. No creds in code, no creds in committed config, no creds in the JAR
 - **Per-venue request signing** — HMAC-SHA256 (Binance) and HMAC-SHA384 (Bitfinex), each with a unit-tested signer
@@ -113,16 +113,16 @@ The test suite runs without network access, exchange credentials, or environment
 ## Why this design (for the reader)
 
 - **Why no shared HTTP base?** Each venue has its own quirks — Binance puts the signature in the query string, Bitfinex in a header with a nonce. A shared base ends up as a soup of `if (venue == ...)` branches. One package per venue keeps quirks local.
-- **Why `MessageSender` as an interface?** So the signer/payload-builder is testable without spinning up a mock HTTP server. The real `HttpMessageSender` is a thin Apache HttpClient wrapper.
+- **Why is `HttpMessageSender` an injectable constructor default, not an interface?** `MessageSender` takes it as `httpMessageSender: HttpMessageSender = HttpMessageSender()`, so a test swaps in a fake without spinning up a mock HTTP server, but there's no separate interface type — one implementation, no seam to abstract behind.
 
 ## Stack
 
 - Kotlin 2.3.21 (JVM target 25), Java 25 toolchain
-- Apache HttpClient 5.5
-- Jackson 2.20 (BOM-managed)
+- Apache HttpClient 5.6
+- Jackson 2.22 (BOM-managed)
 - Apache Commons Codec / Lang3 / IO
 - JUnit Jupiter 6.1, Mockito 5.23, Hamcrest 3
-- Gradle 9.5.1
+- Gradle 9.6
 
 ## Project layout
 
