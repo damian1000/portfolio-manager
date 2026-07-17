@@ -1,145 +1,43 @@
 plugins {
-    id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '2.3.21' // pinned: CodeQL's Kotlin extractor caps at <2.3.30
+    id 'io.github.damian1000.kotlin-conventions' version '0.2.0'
     id 'application'
-    id 'jacoco'
-    id 'com.diffplug.spotless' version '8.8.0'
-    id 'org.owasp.dependencycheck' version '12.2.2'
 }
 
 group = 'io.github.damian1000'
 version = '1.0-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
 
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
 
 kotlin {
-    jvmToolchain(25)
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
-        freeCompilerArgs.add("-Xjsr305=strict")
+        freeCompilerArgs.add('-Xjsr305=strict')
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
-    // --- Jackson BOM: keep all Jackson modules in sync ---
-    implementation platform("com.fasterxml.jackson:jackson-bom:2.22.1")
+    // Jackson BOM: keep all Jackson modules in sync.
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.22.1')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
 
-    implementation "com.fasterxml.jackson.core:jackson-databind"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
-    implementation "com.fasterxml.jackson.core:jackson-annotations"
-
-    // HTTP client
-    implementation "org.apache.httpcomponents.client5:httpclient5:5.6.2"
-
-    // Codec / utils
-    implementation "commons-codec:commons-codec:1.22.0"
-
-    // Apache Commons
-    implementation "org.apache.commons:commons-lang3:3.20.0"
-    implementation "commons-io:commons-io:2.22.0"
-
-    // Logging
-    implementation "org.slf4j:slf4j-api:2.0.18"
-    runtimeOnly "org.slf4j:slf4j-simple:2.0.18"
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.6.2'
+    implementation 'commons-codec:commons-codec:1.22.0'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    implementation 'commons-io:commons-io:2.22.0'
+    implementation 'org.slf4j:slf4j-api:2.0.18'
+    runtimeOnly 'org.slf4j:slf4j-simple:2.0.18'
 
     // Lombok (compile-time only)
-    compileOnly "org.projectlombok:lombok:1.18.46"
-    annotationProcessor "org.projectlombok:lombok:1.18.46"
+    compileOnly 'org.projectlombok:lombok:1.18.46'
+    annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
-    // Testing (JUnit 6 via BOM)
-    testImplementation platform("org.junit:junit-bom:6.1.2")
-    testImplementation "org.junit.jupiter:junit-jupiter"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-    testImplementation "org.mockito:mockito-junit-jupiter:5.23.0"
-    testImplementation "org.mockito:mockito-core:5.23.0"
-    testImplementation "org.mockito.kotlin:mockito-kotlin:6.3.0"
-    testImplementation "org.hamcrest:hamcrest:3.0"
-}
-
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-}
-
-// Coverage configuration shared between report and verification. Excludes:
-//   * MainKt              — top-level CLI mains that call live exchange APIs
-//   * HttpMessageSender*  — Apache HttpClient wrapper + its Companion factory
-//   * HttpRequestFailed*  — exception class (fields only)
-//   * WithdrawalAuditLog$Companion — file-system audit-log factory (openDefault)
-def coverageExcludes = [
-    // CLI entry points only: `main` runs the app and calls System.exit, which
-    // can't be exercised in a unit test. Everything else is covered by tests.
-    '**/MainKt.class',
-]
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true
-        html.required = true
-    }
-    afterEvaluate {
-        classDirectories.setFrom(
-            files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: coverageExcludes)
-            })
-        )
-    }
-}
-
-jacocoTestCoverageVerification {
-    dependsOn jacocoTestReport
-    afterEvaluate {
-        classDirectories.setFrom(
-            files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: coverageExcludes)
-            })
-        )
-    }
-    violationRules {
-        rule {
-            limit {
-                counter = 'INSTRUCTION'
-                value = 'COVEREDRATIO'
-                minimum = 0.90
-            }
-        }
-    }
-}
-
-check.dependsOn jacocoTestCoverageVerification
-
-spotless {
-    kotlin {
-        target 'src/**/*.kt'
-        ktlint('1.5.0').editorConfigOverride([
-            'max_line_length': '160',
-        ])
-    }
-    kotlinGradle {
-        target '*.gradle.kts'
-        ktlint('1.5.0')
-    }
-    // Config/docs (YAML workflows, Markdown) held to the same bar as the Kotlin. Needs Node on
-    // PATH for Prettier (present on CI runners and dev machines).
-    format 'config', {
-        target '.github/**/*.yml', '.github/**/*.yaml', '*.md'
-        prettier('3.4.2')
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
+    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:6.3.0'
+    testImplementation 'org.hamcrest:hamcrest:3.0'
 }
 
 application {
@@ -147,15 +45,22 @@ application {
     mainClass = 'io.github.damian1000.portfolio.binance.MainKt'
 }
 
-// OWASP dependency vulnerability scanner. Run: ./gradlew dependencyCheckAnalyze
-// Fails the build on any dependency with CVSS >= 7.0.
-dependencyCheck {
-    failBuildOnCVSS = 7.0f
-    formats = ['HTML', 'JSON']
-    analyzers {
-        assemblyEnabled = false
-        nodeEnabled = false
-        nodeAuditEnabled = false
-        nuspecEnabled = false
+// CLI entry points only: `main` runs the app and calls System.exit, which can't be exercised in a
+// unit test. Everything else is covered by tests.
+def coverageExcludes = ['**/MainKt.class']
+
+jacocoTestReport {
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: coverageExcludes)
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: coverageExcludes)
+        }))
     }
 }
