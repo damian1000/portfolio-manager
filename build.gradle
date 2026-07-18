@@ -1,5 +1,5 @@
 plugins {
-    id 'io.github.damian1000.kotlin-conventions' version '0.2.0'
+    id 'io.github.damian1000.kotlin-conventions' version '0.3.0'
     id 'application'
 }
 
@@ -25,10 +25,10 @@ dependencies {
 
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.6.2'
     implementation 'commons-codec:commons-codec:1.22.0'
-    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    implementation deps.commons.lang3
     implementation 'commons-io:commons-io:2.22.0'
-    implementation 'org.slf4j:slf4j-api:2.0.18'
-    runtimeOnly 'org.slf4j:slf4j-simple:2.0.18'
+    implementation deps.slf4j.api
+    runtimeOnly deps.slf4j.simple
 
     // Lombok (compile-time only)
     compileOnly 'org.projectlombok:lombok:1.18.46'
@@ -37,7 +37,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
     testImplementation 'org.mockito:mockito-core:5.23.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:6.3.0'
-    testImplementation 'org.hamcrest:hamcrest:3.0'
+    testImplementation deps.hamcrest
 }
 
 application {
