@@ -63,10 +63,12 @@ cp .env.example .env
 
 ## Running
 
-The Gradle `application` plugin entry point is `binance.MainKt`:
+The Gradle `application` plugin entry point is `binance.MainKt`. It takes three arguments and
+exits `64` with a usage line if given fewer, so a bare `./gradlew run` does nothing but print
+that usage:
 
 ```bash
-./gradlew run
+./gradlew run --args="BTC 0.01 destination-address"
 ```
 
 For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfinex.MainKt` directly. The Bitfinex `Main` defaults to read-only behavior:
