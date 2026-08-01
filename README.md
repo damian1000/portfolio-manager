@@ -63,12 +63,12 @@ cp .env.example .env
 
 ## Running
 
-The Gradle `application` plugin entry point is `binance.MainKt`. It takes three arguments and
-exits `64` with a usage line if given fewer, so a bare `./gradlew run` does nothing but print
-that usage:
+The Gradle `application` plugin entry point is `binance.MainKt`. It reads system status and
+wallet balances, and takes no arguments — the Binance side has no withdrawal path, so it exits
+`64` rather than accept arguments it cannot act on:
 
 ```bash
-./gradlew run --args="BTC 0.01 destination-address"
+./gradlew run
 ```
 
 For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfinex.MainKt` directly. The Bitfinex `Main` defaults to read-only behavior:
@@ -82,17 +82,36 @@ require `mainClass` in `build.gradle` switched to
 `io.github.damian1000.portfolio.bitfinex.MainKt` first — as-is, `run` boots the Binance side:
 
 ```bash
-# Dry run (default): logs the redacted intent + writes a DRY_RUN audit row, no network call.
+# Dry run (default): logs the redacted intent + journals a DRY_RUN record, no withdraw call.
 ./gradlew run --args="--withdraw BTC 0.01 destination-address"
 
 # Actually submit. Requires the explicit confirm flag — easy to omit, by design.
 ./gradlew run --args="--withdraw BTC 0.01 destination-address --confirm-withdrawal"
 ```
 
-Every withdrawal attempt (dry-run or live) appends a tab-separated row to
-`~/.portfolio-manager/bitfinex-withdrawals.log` (override with `PORTFOLIO_AUDIT_DIR`).
-Destination addresses are redacted in both logs and the audit file
-(`bc1q***x9` style); the full address is only ever sent to the exchange.
+Every withdrawal attempt appends JSON lines to
+`~/.portfolio-manager/bitfinex-withdrawals.jsonl` (override with `PORTFOLIO_AUDIT_DIR`), one per
+state change, `fsync`ed before the run continues. Destination addresses are redacted in both logs
+and the journal (`bc1q***x9` style); the full address is only ever sent to the exchange.
+
+### Withdrawal lifecycle
+
+A withdrawal is `INTENT` → `SUBMITTED` → `CONFIRMED`, and only `CONFIRMED` and `FAILED` are
+terminal. The intent is on disk before the venue is contacted, because everything after that
+point can fail in a way that leaves money moving.
+
+A timeout is recorded as `UNKNOWN`, never `FAILED`. A dropped connection says nothing about
+whether Bitfinex accepted the request, and calling that a failure is what invites a retry into a
+second withdrawal. `UNKNOWN` never resolves itself: the next run reconciles it against the venue's
+movement history, and until it reaches a terminal state the CLI refuses to submit anything new and
+exits `75`.
+
+Reconciliation matches on currency, amount and destination within a time window, because
+Bitfinex's `payment_id` is a destination memo rather than a client order id. That is a heuristic
+and is treated as one — a single unambiguous match resolves, and two matches, an unrecognised
+status or an unreadable movement history all stay unresolved for a human. Absence of a movement
+only counts as failure after a settling window, since a movement that has not been published yet
+looks exactly like one that never existed.
 
 Exit codes follow the BSD `sysexits.h` convention: `64` on bad arguments
 (unknown currency, non-positive amount, blank address), `1` on read or
