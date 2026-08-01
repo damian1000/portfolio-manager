@@ -20,14 +20,25 @@ class BitfinexGateway(
         BitfinexReadSettingKeys(listOf("api:$key")),
     )
 
-    fun submitWithdrawalRequest(currency: Currency, amount: String, destinationAddress: String): String {
+    /**
+     * [withdrawalId] is the journal's id for this withdrawal, sent as the venue's `payment_id` and
+     * stable across retries, so a resubmission carries the same value the first attempt did rather
+     * than a fresh random one.
+     *
+     * It is not a true idempotency key and must not be relied on as one: Bitfinex documents
+     * `payment_id` as a destination memo for currencies that need one, and does not promise to
+     * deduplicate on it. Reconciling against movement history is what actually prevents a duplicate
+     * withdrawal; this only makes the two attempts recognisably related to a human reading the
+     * venue's records.
+     */
+    fun submitWithdrawalRequest(currency: Currency, amount: String, destinationAddress: String, withdrawalId: String = paymentIdSupplier()): String {
         val withdrawalRequestDto =
             BitfinexWithdrawalRequest(
                 BitfinexWallet.exchange,
                 currency.code,
                 amount,
                 destinationAddress,
-                paymentIdSupplier(),
+                withdrawalId,
             )
         return messageSender.sendMessage("v2/auth/w/withdraw", withdrawalRequestDto)
     }

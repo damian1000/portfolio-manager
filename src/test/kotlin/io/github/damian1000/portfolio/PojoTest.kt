@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import io.github.damian1000.portfolio.binance.Currency as BinanceCurrency
 import io.github.damian1000.portfolio.binance.Movement as BinanceMovement
 import io.github.damian1000.portfolio.bitfinex.Currency as BitfinexCurrency
 import io.github.damian1000.portfolio.bitfinex.Movement as BitfinexMovement
@@ -55,12 +54,6 @@ class PojoTest {
         assertEquals(1L, m.id)
         assertEquals(BigDecimal("100"), m.amount)
         assertNotNull(m.createdTimestamp)
-    }
-
-    @Test
-    fun `binance currency enum has codes`() {
-        // Just iterate to keep the enum live in coverage.
-        for (c in BinanceCurrency.entries) assertNotNull(c.code)
     }
 
     @Test

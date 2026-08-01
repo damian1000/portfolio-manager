@@ -9,22 +9,19 @@ fun main(args: Array<String>) {
     exitProcess(run(args))
 }
 
+/**
+ * Reads Binance system status and wallet balances. Takes no arguments.
+ *
+ * It used to demand a currency, an amount and a destination address, and then use none of them:
+ * the currency was parsed and dropped, and the other two reached nothing but a log line — which
+ * also put a full destination address on disk. There is no Binance withdrawal path to implement
+ * them against, so a signature that asks for one advertises something this side cannot do.
+ */
 internal fun run(args: Array<String>, binanceGateway: BinanceGateway = BinanceGateway()): Int {
-    if (args.size < 3) {
-        log.error("Usage: binance <currency> <amount> <destinationAddress>")
+    if (args.isNotEmpty()) {
+        log.error("Usage: binance (no arguments). This reads system status and wallet balances; it cannot withdraw.")
         return 64
     }
-    val currency =
-        try {
-            Currency.valueOf(args[0])
-        } catch (e: IllegalArgumentException) {
-            log.error("Unknown currency '{}'", args[0])
-            return 64
-        }
-    val amount = args[1]
-    val destinationAddress = args[2]
-
-    log.info("currency:{}:amount:{}:destinationAddress:{}", currency, amount, destinationAddress)
     return try {
         log.info("system status: {}", binanceGateway.retrieveSystem())
         log.info("wallets: {}", binanceGateway.retrieveWallets())
