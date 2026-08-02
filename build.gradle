@@ -30,10 +30,6 @@ dependencies {
     implementation deps.slf4j.api
     runtimeOnly deps.slf4j.simple
 
-    // Lombok (compile-time only)
-    compileOnly 'org.projectlombok:lombok:1.18.46'
-    annotationProcessor 'org.projectlombok:lombok:1.18.46'
-
     testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
     testImplementation 'org.mockito:mockito-core:5.23.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:6.3.0'

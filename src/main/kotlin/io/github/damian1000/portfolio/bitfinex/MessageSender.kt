@@ -11,7 +11,7 @@ class MessageSender(
     private val httpMessageSender: HttpMessageSender = HttpMessageSender(),
     private val mapper: ObjectMapper = jacksonObjectMapper(),
     private val propertyHelper: PropertyHelper = PropertyHelper(),
-    private val nonceSupplier: () -> String = { (System.currentTimeMillis() * 1000).toString() },
+    private val nonceSupplier: () -> String = MonotonicNonce()::next,
 ) {
     fun sendMessage(apiPath: String, message: Any): String {
         val body = createJson(message)
