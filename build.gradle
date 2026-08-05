@@ -1,5 +1,5 @@
 plugins {
-    id 'io.github.damian1000.kotlin-conventions' version '0.4.12'
+    id 'io.github.damian1000.kotlin-conventions' version '0.4.13'
     id 'application'
 }
 
@@ -43,20 +43,4 @@ application {
 
 // CLI entry points only: `main` runs the app and calls System.exit, which can't be exercised in a
 // unit test. Everything else is covered by tests.
-def coverageExcludes = ['**/MainKt.class']
-
-jacocoTestReport {
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: coverageExcludes)
-        }))
-    }
-}
-
-jacocoTestCoverageVerification {
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: coverageExcludes)
-        }))
-    }
-}
+coverageExcludes = ['**/MainKt.class']
