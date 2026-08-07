@@ -6,11 +6,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.IOException
 
 class MessageSender(
-    private val signatureHelper: SignatureHelper = SignatureHelper(),
-    private val signingHelper: SigningHelper = SigningHelper(),
+    private val signaturePayload: SignaturePayload = SignaturePayload(),
+    private val hmacSigner: HmacSigner = HmacSigner(),
     private val httpMessageSender: HttpMessageSender = HttpMessageSender(),
     private val mapper: ObjectMapper = jacksonObjectMapper(),
-    private val propertyHelper: PropertyHelper = PropertyHelper(),
+    private val credentials: ApiCredentials = ApiCredentials(),
     private val nonceSupplier: () -> String = MonotonicNonce()::next,
 ) {
     fun sendMessage(apiPath: String, message: Any): String {
@@ -21,11 +21,11 @@ class MessageSender(
     fun sendMessage(apiPath: String): String = sendMessageInternal(apiPath, "{}")
 
     private fun sendMessageInternal(apiPath: String, jsonBody: String): String {
-        val apiKey = propertyHelper.getApiKey()
-        val apiSecret = propertyHelper.getApiSecret()
+        val apiKey = credentials.apiKey()
+        val apiSecret = credentials.apiSecret()
         val nonce = nonceSupplier()
-        val signature = signatureHelper.createSignatureHelper(jsonBody, nonce, apiPath)
-        val signedSignature = signingHelper.sign(signature, apiSecret)
+        val signature = signaturePayload.of(jsonBody, nonce, apiPath)
+        val signedSignature = hmacSigner.sign(signature, apiSecret)
         val uri = "https://api.bitfinex.com/$apiPath"
         return try {
             httpMessageSender.sendPostMessage(uri, nonce, apiKey, signedSignature, jsonBody)

@@ -13,7 +13,7 @@ import java.io.IOException
 
 class MessageSenderTest {
 
-    private val propertyHelper = PropertyHelper(
+    private val credentials = ApiCredentials(
         env = mapOf(
             "BITFINEX_API_KEY" to "bk",
             "BITFINEX_API_SECRET" to "bs",
@@ -21,11 +21,11 @@ class MessageSenderTest {
     )
     private val http = mock<HttpMessageSender>()
     private val sender = MessageSender(
-        signatureHelper = SignatureHelper(),
-        signingHelper = SigningHelper(),
+        signaturePayload = SignaturePayload(),
+        hmacSigner = HmacSigner(),
         httpMessageSender = http,
         mapper = jacksonObjectMapper(),
-        propertyHelper = propertyHelper,
+        credentials = credentials,
         nonceSupplier = { "1700000000000000" },
     )
 
@@ -62,10 +62,10 @@ class MessageSenderTest {
     fun `default nonceSupplier produces a microsecond-precision timestamp`() {
         val nonceCaptor = argumentCaptor<String>()
         val defaultSender = MessageSender(
-            signatureHelper = SignatureHelper(),
-            signingHelper = SigningHelper(),
+            signaturePayload = SignaturePayload(),
+            hmacSigner = HmacSigner(),
             httpMessageSender = http,
-            propertyHelper = propertyHelper,
+            credentials = credentials,
         )
         whenever(http.sendPostMessage(any(), nonceCaptor.capture(), any(), any(), any())).thenReturn("[]")
 

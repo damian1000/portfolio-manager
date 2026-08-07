@@ -6,8 +6,8 @@ import org.hamcrest.Matchers.matchesRegex
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Test
 
-class SigningHelperTest {
-    private val signer = SigningHelper()
+class HmacSignerTest {
+    private val signer = HmacSigner()
 
     @Test
     fun `produces stable HMAC-SHA384 hex for known input`() {

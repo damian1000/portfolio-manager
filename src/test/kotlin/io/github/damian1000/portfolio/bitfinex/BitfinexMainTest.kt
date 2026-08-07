@@ -23,9 +23,9 @@ class BitfinexMainTest {
         return gateway
     }
 
-    private fun stubPropertyHelper(): PropertyHelper {
-        val helper = mock<PropertyHelper>()
-        whenever(helper.getApiKey()).thenReturn("test-key")
+    private fun stubApiCredentials(): ApiCredentials {
+        val helper = mock<ApiCredentials>()
+        whenever(helper.apiKey()).thenReturn("test-key")
         return helper
     }
 
@@ -38,7 +38,7 @@ class BitfinexMainTest {
     ) = run(
         args = args,
         bitfinexGateway = gateway,
-        propertyHelper = stubPropertyHelper(),
+        credentials = stubApiCredentials(),
         journalFactory = { journal },
         reconcilerFactory = { reconciler },
         withdrawalIdSupplier = { withdrawalId },

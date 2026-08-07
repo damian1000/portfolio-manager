@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
 internal fun run(
     args: Array<String>,
     bitfinexGateway: BitfinexGateway = BitfinexGateway(),
-    propertyHelper: PropertyHelper = PropertyHelper(),
+    credentials: ApiCredentials = ApiCredentials(),
     journalFactory: () -> WithdrawalJournal = WithdrawalJournal::openDefault,
     reconcilerFactory: (BitfinexGateway) -> WithdrawalReconciler = { WithdrawalReconciler(it) },
     withdrawalIdSupplier: () -> String = { UUID.randomUUID().toString() },
@@ -63,7 +63,7 @@ internal fun run(
             is CliResult.DryRun -> cliResult.request.currency
             is CliResult.Confirmed -> cliResult.request.currency
         }
-    val readOk = readPortfolio(bitfinexGateway, propertyHelper, readCurrency)
+    val readOk = readPortfolio(bitfinexGateway, credentials, readCurrency)
 
     return when (cliResult) {
         is CliResult.NotRequested -> if (readOk) EXIT_OK else EXIT_FAILED
@@ -96,7 +96,7 @@ internal fun run(
             } else {
                 submitWithdrawal(
                     bitfinexGateway,
-                    propertyHelper,
+                    credentials,
                     cliResult.request,
                     journal,
                     withdrawalIdSupplier(),
@@ -148,10 +148,10 @@ private fun logDryRun(request: WithdrawalRequest) {
     )
 }
 
-private fun readPortfolio(gateway: BitfinexGateway, propertyHelper: PropertyHelper, currency: Currency): Boolean = try {
+private fun readPortfolio(gateway: BitfinexGateway, credentials: ApiCredentials, currency: Currency): Boolean = try {
     log.info("wallets: {}", gateway.retrieveWallets())
     gateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
-    log.info("settings: {}", gateway.retrieveSettingsForKey(propertyHelper.getApiKey()))
+    log.info("settings: {}", gateway.retrieveSettingsForKey(credentials.apiKey()))
     true
 } catch (e: Exception) {
     log.error("Bitfinex read failed", e)
@@ -160,7 +160,7 @@ private fun readPortfolio(gateway: BitfinexGateway, propertyHelper: PropertyHelp
 
 private fun submitWithdrawal(
     gateway: BitfinexGateway,
-    propertyHelper: PropertyHelper,
+    credentials: ApiCredentials,
     request: WithdrawalRequest,
     journal: WithdrawalJournal,
     withdrawalId: String,
@@ -204,6 +204,6 @@ private fun submitWithdrawal(
 
     // SUBMITTED is not terminal: the venue has taken it, but only the movement history says whether
     // it settled. The next run picks it up and reconciles it.
-    readPortfolio(gateway, propertyHelper, request.currency)
+    readPortfolio(gateway, credentials, request.currency)
     return EXIT_OK
 }

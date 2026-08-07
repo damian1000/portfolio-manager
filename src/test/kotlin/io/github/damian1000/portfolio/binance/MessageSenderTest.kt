@@ -14,8 +14,8 @@ import org.mockito.kotlin.whenever
 import java.io.IOException
 
 class MessageSenderTest {
-    private val propertyHelper =
-        PropertyHelper(
+    private val credentials =
+        ApiCredentials(
             env = mapOf(
                 "BINANCE_API_KEY" to "test-key",
                 "BINANCE_API_SECRET" to "test-secret",
@@ -24,10 +24,10 @@ class MessageSenderTest {
     private val httpSender = mock<HttpMessageSender>()
     private val sender =
         MessageSender(
-            signingHelper = SigningHelper(),
+            hmacSigner = HmacSigner(),
             httpMessageSender = httpSender,
             mapper = ObjectMapper(),
-            propertyHelper = propertyHelper,
+            credentials = credentials,
         )
 
     @Test
