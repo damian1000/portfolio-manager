@@ -8,10 +8,10 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 class MessageSender(
-    private val signingHelper: SigningHelper = SigningHelper(),
+    private val hmacSigner: HmacSigner = HmacSigner(),
     private val httpMessageSender: HttpMessageSender = HttpMessageSender(),
     private val mapper: ObjectMapper = ObjectMapper(),
-    private val propertyHelper: PropertyHelper = PropertyHelper(),
+    private val credentials: ApiCredentials = ApiCredentials(),
 ) {
     fun sendGetMessage(apiPath: String): String = sendGetMessage(apiPath, null)
 
@@ -24,9 +24,9 @@ class MessageSender(
                     parameterMap
                         .map { entry -> BasicNameValuePair(entry.key, entry.value.toString()) }
 
-                val apiSecret = propertyHelper.getApiSecret()
+                val apiSecret = credentials.apiSecret()
                 val queryParameters = WWWFormCodec.format(nameValuePairs, Charset.forName("UTF-8"))
-                val signature = signingHelper.sign(queryParameters, apiSecret)
+                val signature = hmacSigner.sign(queryParameters, apiSecret)
 
                 val allParameters = nameValuePairs.plus(BasicNameValuePair("signature", signature))
                 "?${WWWFormCodec.format(allParameters, Charset.forName("UTF-8"))}"
@@ -34,7 +34,7 @@ class MessageSender(
                 ""
             }
 
-        val apiKey = propertyHelper.getApiKey()
+        val apiKey = credentials.apiKey()
         val uri = "https://api.binance.com$apiPath$allQueryParameters"
 
         return try {

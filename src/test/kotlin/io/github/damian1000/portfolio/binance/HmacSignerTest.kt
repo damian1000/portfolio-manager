@@ -5,8 +5,8 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.matchesRegex
 import org.junit.jupiter.api.Test
 
-class SigningHelperTest {
-    private val signer = SigningHelper()
+class HmacSignerTest {
+    private val signer = HmacSigner()
 
     @Test
     fun `produces stable HMAC-SHA256 hex for known input`() {
@@ -33,11 +33,15 @@ class SigningHelperTest {
     }
 
     @Test
-    fun `empty secret triggers wrapper RuntimeException with helpful message`() {
+    fun `an empty secret fails with the JCE cause rather than a wrapper`() {
+        // This used to catch Exception and rethrow RuntimeException("Unable to sign message."),
+        // which replaced every distinct cause with one string. The signer now catches nothing, so
+        // the reason survives. A blank secret is rejected earlier by ApiCredentials, where the
+        // environment variable's name is still known — that is the message an operator needs.
         val ex =
-            org.junit.jupiter.api.Assertions.assertThrows(RuntimeException::class.java) {
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException::class.java) {
                 signer.sign("anything", "")
             }
-        assertThat(ex.message, equalTo("Unable to sign message."))
+        assertThat(ex.message, equalTo("Empty key"))
     }
 }
