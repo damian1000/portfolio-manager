@@ -1,8 +1,8 @@
 # Portfolio Manager
 
-[![CI](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/damian1000/portfolio-manager/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/damian1000/portfolio-manager/actions/workflows/codeql.yml/badge.svg)](https://github.com/damian1000/portfolio-manager/actions/workflows/codeql.yml)
-[![codecov](https://codecov.io/gh/damian1000/portfolio-manager/graph/badge.svg)](https://codecov.io/gh/damian1000/portfolio-manager)
+[![CI](https://github.com/damianhoward/portfolio-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/damianhoward/portfolio-manager/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/damianhoward/portfolio-manager/actions/workflows/codeql.yml/badge.svg)](https://github.com/damianhoward/portfolio-manager/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/damianhoward/portfolio-manager/graph/badge.svg)](https://codecov.io/gh/damianhoward/portfolio-manager)
 
 Two Kotlin **venue-local exchange clients** — `BinanceGateway` and `BitfinexGateway` — that read wallet balances and movement history from **Binance** and **Bitfinex** via their authenticated REST APIs. They share neither a base class nor an interface; what they share is shape and approach, not types. A third exchange would be one new package, modeled on the existing two.
 
@@ -79,7 +79,7 @@ For the Bitfinex side, either change `mainClass` in `build.gradle` or run `bitfi
 
 Withdrawal is opt-in **and dry-run by default**. These commands run the Bitfinex CLI, so they
 require `mainClass` in `build.gradle` switched to
-`io.github.damian1000.portfolio.bitfinex.MainKt` first — as-is, `run` boots the Binance side:
+`com.damianhoward.portfolio.bitfinex.MainKt` first — as-is, `run` boots the Binance side:
 
 ```bash
 # Dry run (default): logs the redacted intent + journals a DRY_RUN record, no withdraw call.

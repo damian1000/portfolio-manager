@@ -3,7 +3,7 @@ plugins {
     id 'application'
 }
 
-group = 'io.github.damian1000'
+group = 'com.damianhoward'
 version = '1.0-SNAPSHOT'
 
 tasks.withType(JavaCompile).configureEach {
@@ -37,8 +37,8 @@ dependencies {
 }
 
 application {
-    // Kotlin main in src/main/kotlin/io/github/damian1000/portfolio/binance/Main.kt
-    mainClass = 'io.github.damian1000.portfolio.binance.MainKt'
+    // Kotlin main in src/main/kotlin/com/damianhoward/portfolio/binance/Main.kt
+    mainClass = 'com.damianhoward.portfolio.binance.MainKt'
 }
 
 // CLI entry points only: `main` runs the app and calls System.exit, which can't be exercised in a
