@@ -117,6 +117,20 @@ Exit codes follow the BSD `sysexits.h` convention: `64` on bad arguments
 (unknown currency, non-positive amount, blank address), `1` on read or
 submission failure, `0` on success.
 
+## Balance reconciliation
+
+Every Bitfinex read records a **balance snapshot**, and compares it with the previous one against the venue's own movement history. The property asserted is conservation: **a currency's balance change between two snapshots must equal the signed sum of the movements in that window.**
+
+That is worth asserting because the two sides have independent origins. The balance comes from the wallets endpoint and the movements from the movements endpoint; there is no code here that could make them agree by construction, so agreement is evidence rather than tautology. It is the same property `trading-system` asserts over its fill ledger, in a domain where the write path belongs to someone else entirely.
+
+Balances are summed across wallet types before comparing. Bitfinex splits a currency over `exchange`, `margin` and `funding`, and an internal transfer between them is not a movement — reconciling per wallet type would report every such transfer as unexplained on both sides.
+
+**A verdict is withheld rather than guessed.** Snapshots carry this process's clock and movements carry the venue's, so the two window boundaries do not line up exactly. A movement settling within five minutes of either edge makes that currency _inconclusive_: it may fall inside one side and outside the other, and a difference produced that way is measurement, not drift. That check runs _before_ the comparison, so a coincidental match is not reported as a clean window either.
+
+Snapshots are appended, never overwritten, because the question is not "what is the balance" — the venue answers that on demand — but "what did it do between two points". Each write is `fsync`ed, like the withdrawal journal, since the next run measures from it.
+
+**What this does not claim.** A movement is a transfer in or out of the venue, not a fill. On an account that trades, a balance moves without any movement behind it, so an unexplained delta is expected there and means nothing. The check is a statement about custody — it earns its place on an account used for holding and transferring, where the expected answer is zero and anything else wants a human.
+
 ## Tests
 
 ```bash

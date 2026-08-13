@@ -1,5 +1,6 @@
 package com.damianhoward.portfolio.bitfinex
 
+import com.damianhoward.portfolio.reconcile.SnapshotStore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -35,6 +36,7 @@ class BitfinexMainTest {
         journal: WithdrawalJournal,
         reconciler: WithdrawalReconciler = mock(),
         withdrawalId: String = "test-id",
+        snapshots: SnapshotStore = SnapshotStore(Files.createTempDirectory("snap").resolve("s.jsonl")),
     ) = run(
         args = args,
         bitfinexGateway = gateway,
@@ -42,6 +44,10 @@ class BitfinexMainTest {
         journalFactory = { journal },
         reconcilerFactory = { reconciler },
         withdrawalIdSupplier = { withdrawalId },
+        // Injected, not defaulted. The default resolves under the developer's home directory, so a
+        // test that let it stand would write balance snapshots there and read back whatever an
+        // earlier run left -- shared state between the suite and the machine it runs on.
+        snapshotFactory = { snapshots },
     )
 
     private fun journal(tmp: Path) = WithdrawalJournal(tmp.resolve("j.jsonl"))

@@ -1,7 +1,15 @@
 package com.damianhoward.portfolio.bitfinex
 
+import com.damianhoward.portfolio.reconcile.BalanceReconciler
+import com.damianhoward.portfolio.reconcile.BalanceSnapshot
+import com.damianhoward.portfolio.reconcile.CurrencyBalance
+import com.damianhoward.portfolio.reconcile.LedgerMovement
+import com.damianhoward.portfolio.reconcile.SnapshotStore
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.system.exitProcess
 
@@ -11,6 +19,9 @@ private const val EXIT_OK = 0
 private const val EXIT_FAILED = 1
 private const val EXIT_USAGE = 64
 private const val EXIT_UNRESOLVED = 75
+
+/** The venue name snapshots are keyed by; one store holds both venues. */
+private const val VENUE = "bitfinex"
 
 fun main(args: Array<String>) {
     exitProcess(run(args))
@@ -23,6 +34,9 @@ internal fun run(
     journalFactory: () -> WithdrawalJournal = WithdrawalJournal::openDefault,
     reconcilerFactory: (BitfinexGateway) -> WithdrawalReconciler = { WithdrawalReconciler(it) },
     withdrawalIdSupplier: () -> String = { UUID.randomUUID().toString() },
+    snapshotFactory: () -> SnapshotStore = SnapshotStore::openDefault,
+    balanceReconciler: BalanceReconciler = BalanceReconciler(),
+    clock: Clock = Clock.systemUTC(),
 ): Int {
     val cliResult =
         try {
@@ -63,7 +77,7 @@ internal fun run(
             is CliResult.DryRun -> cliResult.request.currency
             is CliResult.Confirmed -> cliResult.request.currency
         }
-    val readOk = readPortfolio(bitfinexGateway, credentials, readCurrency)
+    val readOk = readPortfolio(bitfinexGateway, credentials, readCurrency, snapshotFactory(), balanceReconciler, clock)
 
     return when (cliResult) {
         is CliResult.NotRequested -> if (readOk) EXIT_OK else EXIT_FAILED
@@ -100,6 +114,9 @@ internal fun run(
                     cliResult.request,
                     journal,
                     withdrawalIdSupplier(),
+                    snapshotFactory(),
+                    balanceReconciler,
+                    clock,
                 )
             }
         }
@@ -148,11 +165,19 @@ private fun logDryRun(request: WithdrawalRequest) {
     )
 }
 
-private fun readPortfolio(gateway: BitfinexGateway, credentials: ApiCredentials, currency: Currency): Boolean = try {
+private fun readPortfolio(
+    gateway: BitfinexGateway,
+    credentials: ApiCredentials,
+    currency: Currency,
+    snapshots: SnapshotStore,
+    reconciler: BalanceReconciler,
+    clock: Clock,
+): Boolean = try {
     // One line per wallet rather than the raw response. The venue returns a row per wallet type
     // per currency, so the document is mostly structure; what an operator reads this for is which
     // currency sits where, and how much of it can actually be moved.
-    gateway.retrieveWallets().forEach {
+    val wallets = gateway.retrieveWallets()
+    wallets.forEach {
         log.info(
             "wallet: type={} currency={} balance={} available={}",
             it.type,
@@ -161,12 +186,67 @@ private fun readPortfolio(gateway: BitfinexGateway, credentials: ApiCredentials,
             it.availableBalance ?: "calculating",
         )
     }
-    gateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
+    val movements = gateway.retrieveMovementHistory(currency.name)
+    movements.forEach { log.info("movement: {}", it) }
     log.info("settings: {}", gateway.retrieveSettingsForKey(credentials.apiKey()))
+    reconcileBalances(wallets, movements, snapshots, reconciler, clock)
     true
 } catch (e: Exception) {
     log.error("Bitfinex read failed", e)
     false
+}
+
+/**
+ * Takes a balance snapshot, and reports what changed since the last one that the venue's own
+ * movement records do not account for.
+ *
+ * The snapshot is recorded whatever the verdict, including on the first run when there is nothing
+ * to compare against. A run that reports drift and forgets to leave an anchor makes the *next* run
+ * unable to say anything, which is the failure that turns a check into a one-off.
+ *
+ * A balance is summed across wallet types. Bitfinex splits a currency over exchange, margin and
+ * funding, and an internal transfer between them is not a movement — reconciling per wallet type
+ * would report every such transfer as unexplained on both sides.
+ */
+private fun reconcileBalances(wallets: List<Wallet>, movements: List<Movement>, snapshots: SnapshotStore, reconciler: BalanceReconciler, clock: Clock) {
+    val balances =
+        wallets
+            .groupBy { it.currency }
+            .map { (currency, rows) -> CurrencyBalance(currency, rows.fold(BigDecimal.ZERO) { sum, w -> sum + w.balance }) }
+    val current = BalanceSnapshot(VENUE, clock.millis(), balances)
+
+    val previous = snapshots.latestFor(VENUE)
+    if (previous == null) {
+        snapshots.append(current)
+        log.info("balance reconciliation: first snapshot recorded; nothing to measure a change from yet")
+        return
+    }
+
+    val ledger =
+        movements.mapNotNull { m ->
+            val code = m.currencyCode ?: return@mapNotNull null
+            val amount = m.amount ?: return@mapNotNull null
+            val settledAt = m.updatedTimestamp ?: m.createdTimestamp ?: return@mapNotNull null
+            LedgerMovement(code, amount, settledAt.toInstant(ZoneOffset.UTC).toEpochMilli())
+        }
+
+    val result = reconciler.reconcile(previous, current, ledger)
+    snapshots.append(current)
+
+    result.inconclusive.forEach { log.info("balance reconciliation: {} not judged — {}", it.currency, it.reason) }
+    if (result.needsAttention) {
+        result.unexplained.forEach {
+            log.warn(
+                "balance reconciliation: {} moved by {} with {} accounted for; {} is unexplained",
+                it.currency,
+                it.delta,
+                it.accountedFor,
+                it.unexplained,
+            )
+        }
+    } else {
+        log.info("balance reconciliation: every judged balance is accounted for by its movements")
+    }
 }
 
 private fun submitWithdrawal(
@@ -175,6 +255,9 @@ private fun submitWithdrawal(
     request: WithdrawalRequest,
     journal: WithdrawalJournal,
     withdrawalId: String,
+    snapshots: SnapshotStore,
+    balanceReconciler: BalanceReconciler,
+    clock: Clock,
 ): Int {
     log.warn(
         "[LIVE] submitting withdrawal {}: currency={} amount={} destination={}",
@@ -215,6 +298,6 @@ private fun submitWithdrawal(
 
     // SUBMITTED is not terminal: the venue has taken it, but only the movement history says whether
     // it settled. The next run picks it up and reconciles it.
-    readPortfolio(gateway, credentials, request.currency)
+    readPortfolio(gateway, credentials, request.currency, snapshots, balanceReconciler, clock)
     return EXIT_OK
 }
