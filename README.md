@@ -117,6 +117,18 @@ Exit codes follow the BSD `sysexits.h` convention: `64` on bad arguments
 (unknown currency, non-positive amount, blank address), `1` on read or
 submission failure, `0` on success.
 
+## Rate limiting and retry
+
+Reads are spaced before the request and retried after a refusal. The two are not interchangeable: a client that only backs off _after_ a 429 has already spent the request that earned it, and on a venue counting refusals toward a ban the cheapest call is the one not made.
+
+Retry is **bounded**, and that bound is the point — an unbounded retry against a rate limiter is how a rate limit becomes a **ban**, which costs the account rather than the request. Five attempts over roughly eight seconds, exponential backoff with full jitter, and a distinct `RetriesExhausted` carrying the attempt count and the last cause. A venue's own wait hint always beats the computed backoff: it knows when it will accept traffic again, and a client guessing shorter earns the next refusal.
+
+`RetryPolicy` is shared between the two venue packages even though the gateways deliberately are not. It is the one thing here that protects an _invariant_ rather than saving typing, which is the test `workspace-config` doc 02 sets for extracting anything.
+
+**Which failure is transient stays venue-local, because the venues disagree.** Binance distinguishes **418 from 429**: 429 means slow down, 418 means an earlier 429 was ignored and the IP is banned for minutes to days. So 418 is _fatal_ here — retrying into a ban extends it. A classifier keyed on status alone, shared across both, would get that wrong.
+
+**Withdrawals are never retried.** A retried read costs a duplicate response; a retried withdrawal risks a duplicate payment, and Bitfinex offers no idempotency key that would make one safe — which is why `WithdrawalReconciler` exists at all. That path stays a single attempt whose uncertain outcome is recorded as `UNKNOWN` and settled against movement history.
+
 ## Balance reconciliation
 
 Every Bitfinex read records a **balance snapshot**, and compares it with the previous one against the venue's own movement history. The property asserted is conservation: **a currency's balance change between two snapshots must equal the signed sum of the movements in that window.**
