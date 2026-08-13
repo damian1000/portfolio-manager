@@ -1,5 +1,7 @@
 package com.damianhoward.portfolio.bitfinex
 
+import com.damianhoward.portfolio.net.RequestThrottle
+import com.damianhoward.portfolio.net.RetryPolicy
 import java.util.UUID
 
 class BitfinexGateway(
@@ -7,19 +9,29 @@ class BitfinexGateway(
     private val bitfinexMovementMapper: BitfinexMovementMapper = BitfinexMovementMapper(),
     private val bitfinexWalletMapper: BitfinexWalletMapper = BitfinexWalletMapper(),
     private val paymentIdSupplier: () -> String = { UUID.randomUUID().toString() },
+    private val throttle: RequestThrottle = BitfinexRetries.throttle(),
+    private val retries: RetryPolicy = RetryPolicy(),
 ) {
+    /**
+     * Reads are throttled and retried; the withdrawal below is neither, deliberately.
+     *
+     * A retried read costs a duplicate response. A retried withdrawal risks a duplicate payment,
+     * and Bitfinex offers no idempotency key that would make one safe -- which is why
+     * [WithdrawalReconciler] exists. That path stays a single attempt whose uncertain outcome is
+     * recorded as UNKNOWN and settled against movement history.
+     */
+    private fun <T> read(call: () -> T): T = retries.execute(BitfinexRetries::classify) { throttle.throttle(call) }
     fun retrieveMovementHistory(currency: String): List<Movement> {
         val apiPath = "v2/auth/r/movements/$currency/hist"
-        val result = messageSender.sendMessage(apiPath)
+        val result = read { messageSender.sendMessage(apiPath) }
         return bitfinexMovementMapper.mapMovement(result)
     }
 
-    fun retrieveWallets(): List<Wallet> = bitfinexWalletMapper.mapWallets(messageSender.sendMessage("v2/auth/r/wallets"))
+    fun retrieveWallets(): List<Wallet> = bitfinexWalletMapper.mapWallets(read { messageSender.sendMessage("v2/auth/r/wallets") })
 
-    fun retrieveSettingsForKey(key: String): String = messageSender.sendMessage(
-        "v2/auth/r/settings",
-        BitfinexReadSettingKeys(listOf("api:$key")),
-    )
+    fun retrieveSettingsForKey(key: String): String = read {
+        messageSender.sendMessage("v2/auth/r/settings", BitfinexReadSettingKeys(listOf("api:$key")))
+    }
 
     /**
      * [withdrawalId] is the journal's id for this withdrawal, sent as the venue's `payment_id` and
