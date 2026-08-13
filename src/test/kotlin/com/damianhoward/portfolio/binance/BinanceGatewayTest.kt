@@ -16,9 +16,10 @@ class BinanceGatewayTest {
     @Test
     fun `retrieveWallets sends a signed account request`() {
         val captor = argumentCaptor<Any>()
-        whenever(messageSender.sendGetMessage(eq("/api/v3/account"), captor.capture())).thenReturn("acc")
+        whenever(messageSender.sendGetMessage(eq("/api/v3/account"), captor.capture()))
+            .thenReturn("""{"balances":[{"asset":"BTC","free":"0.5","locked":"0"}]}""")
 
-        assertEquals("acc", gateway.retrieveWallets())
+        assertEquals("BTC", gateway.retrieveWallets().balances!!.single().asset)
         val req = captor.firstValue as BinanceAccountRequest
         assertEquals(60_000L, req.recvWindow)
         assertTrue(req.timestamp > 0L)

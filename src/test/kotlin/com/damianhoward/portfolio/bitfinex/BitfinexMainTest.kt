@@ -17,7 +17,7 @@ import java.nio.file.Path
 class BitfinexMainTest {
     private fun stubGateway(): BitfinexGateway {
         val gateway = mock<BitfinexGateway>()
-        whenever(gateway.retrieveWallets()).thenReturn("[]")
+        whenever(gateway.retrieveWallets()).thenReturn(emptyList())
         whenever(gateway.retrieveMovementHistory(any())).thenReturn(emptyList())
         whenever(gateway.retrieveSettingsForKey(any())).thenReturn("[]")
         return gateway

@@ -19,8 +19,12 @@ class BitfinexGatewayTest {
 
     @Test
     fun `retrieveWallets hits the wallets endpoint`() {
-        whenever(messageSender.sendMessage("v2/auth/r/wallets")).thenReturn("wallets-json")
-        assertEquals("wallets-json", gateway.retrieveWallets())
+        whenever(messageSender.sendMessage("v2/auth/r/wallets"))
+            .thenReturn("""[["exchange","BTC",0.6,0,0.5,null,null]]""")
+
+        val wallet = gateway.retrieveWallets().single()
+        assertEquals("exchange", wallet.type)
+        assertEquals("BTC", wallet.currency)
     }
 
     @Test

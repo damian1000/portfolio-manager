@@ -24,7 +24,15 @@ internal fun run(args: Array<String>, binanceGateway: BinanceGateway = BinanceGa
     }
     return try {
         log.info("system status: {}", binanceGateway.retrieveSystem())
-        log.info("wallets: {}", binanceGateway.retrieveWallets())
+        // Only what is held. Binance returns a row for every asset it lists, so logging the raw
+        // response put several hundred zero balances -- and the account's commission schedule and
+        // permissions -- on disk to say that two of them were non-zero.
+        val held = binanceGateway.retrieveWallets().nonZeroBalances()
+        if (held.isEmpty()) {
+            log.info("wallets: no non-zero balances")
+        } else {
+            held.forEach { log.info("wallet: asset={} free={} locked={}", it.asset, it.free, it.locked) }
+        }
         0
     } catch (e: Exception) {
         log.error("Binance read failed", e)

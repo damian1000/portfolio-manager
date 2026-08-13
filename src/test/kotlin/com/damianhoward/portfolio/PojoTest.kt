@@ -1,7 +1,5 @@
 package com.damianhoward.portfolio
 
-import com.damianhoward.portfolio.binance.Account
-import com.damianhoward.portfolio.binance.AssetBalance
 import com.damianhoward.portfolio.binance.BinanceAccountRequest
 import com.damianhoward.portfolio.bitfinex.BitfinexReadSettingKeys
 import com.damianhoward.portfolio.bitfinex.BitfinexWallet
@@ -16,27 +14,17 @@ import com.damianhoward.portfolio.bitfinex.Currency as BitfinexCurrency
 import com.damianhoward.portfolio.bitfinex.Movement as BitfinexMovement
 
 /**
- * Round-trips the wire-shape models. These are largely Jackson-bound DTOs;
- * exercising the constructors and accessors here makes sure a field rename
- * shows up as a clear test failure rather than as a silent JSON-mapping break.
+ * Request-shape models that are serialised outward, where the constructor and its accessors are
+ * the whole contract.
+ *
+ * The wallet models used to be here too, as constructor round-trips, on the stated grounds that
+ * they would make a field rename fail. They could not: nothing in them mapped any JSON, so a
+ * rename broke the venue mapping and left this suite green. Those live in
+ * [com.damianhoward.portfolio.binance.BinanceAccountMapperTest] and
+ * [com.damianhoward.portfolio.bitfinex.BitfinexWalletMapperTest] now, against real response
+ * shapes, which is what actually catches it.
  */
 class PojoTest {
-    @Test
-    fun `binance account holds asset balances`() {
-        val balances = listOf(AssetBalance("BTC", BigDecimal("0.5"), BigDecimal.ZERO))
-        val account = Account(balances)
-        assertEquals(balances, account.balances)
-        assertNotNull(Account(null))
-    }
-
-    @Test
-    fun `binance asset balance round trip`() {
-        val a = AssetBalance("ETH", BigDecimal("1.25"), BigDecimal("0.10"))
-        assertEquals("ETH", a.asset)
-        assertEquals(BigDecimal("1.25"), a.free)
-        assertEquals(BigDecimal("0.10"), a.locked)
-    }
-
     @Test
     fun `binance account request carries recvWindow and timestamp`() {
         val req = BinanceAccountRequest(60_000L, 1_700_000_000_000L)
