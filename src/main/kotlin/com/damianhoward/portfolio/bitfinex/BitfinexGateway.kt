@@ -5,6 +5,7 @@ import java.util.UUID
 class BitfinexGateway(
     private val messageSender: MessageSender = MessageSender(),
     private val bitfinexMovementMapper: BitfinexMovementMapper = BitfinexMovementMapper(),
+    private val bitfinexWalletMapper: BitfinexWalletMapper = BitfinexWalletMapper(),
     private val paymentIdSupplier: () -> String = { UUID.randomUUID().toString() },
 ) {
     fun retrieveMovementHistory(currency: String): List<Movement> {
@@ -13,7 +14,7 @@ class BitfinexGateway(
         return bitfinexMovementMapper.mapMovement(result)
     }
 
-    fun retrieveWallets(): String = messageSender.sendMessage("v2/auth/r/wallets")
+    fun retrieveWallets(): List<Wallet> = bitfinexWalletMapper.mapWallets(messageSender.sendMessage("v2/auth/r/wallets"))
 
     fun retrieveSettingsForKey(key: String): String = messageSender.sendMessage(
         "v2/auth/r/settings",

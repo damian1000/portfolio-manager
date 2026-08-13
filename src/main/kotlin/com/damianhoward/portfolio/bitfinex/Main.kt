@@ -149,7 +149,18 @@ private fun logDryRun(request: WithdrawalRequest) {
 }
 
 private fun readPortfolio(gateway: BitfinexGateway, credentials: ApiCredentials, currency: Currency): Boolean = try {
-    log.info("wallets: {}", gateway.retrieveWallets())
+    // One line per wallet rather than the raw response. The venue returns a row per wallet type
+    // per currency, so the document is mostly structure; what an operator reads this for is which
+    // currency sits where, and how much of it can actually be moved.
+    gateway.retrieveWallets().forEach {
+        log.info(
+            "wallet: type={} currency={} balance={} available={}",
+            it.type,
+            it.currency,
+            it.balance,
+            it.availableBalance ?: "calculating",
+        )
+    }
     gateway.retrieveMovementHistory(currency.name).forEach { log.info("movement: {}", it) }
     log.info("settings: {}", gateway.retrieveSettingsForKey(credentials.apiKey()))
     true

@@ -1,10 +1,10 @@
 package com.damianhoward.portfolio.binance
 
-class BinanceGateway(private val messageSender: MessageSender = MessageSender()) {
-    fun retrieveWallets(): String {
+class BinanceGateway(private val messageSender: MessageSender = MessageSender(), private val accountMapper: BinanceAccountMapper = BinanceAccountMapper()) {
+    fun retrieveWallets(): Account {
         val apiPath = "/api/v3/account"
         val accountRequest = BinanceAccountRequest(60_000, System.currentTimeMillis())
-        return messageSender.sendGetMessage(apiPath, accountRequest)
+        return accountMapper.mapAccount(messageSender.sendGetMessage(apiPath, accountRequest))
     }
 
     fun retrieveSystem(): String {
