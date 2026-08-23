@@ -6,7 +6,7 @@ import java.math.BigDecimal
  * One currency's verdict: did the balance move by what the venue's own movement records account
  * for?
  *
- * The property is conservation, the same one `trading-system` asserts over its fill ledger — a
+ * The property is conservation, the same one `position-ledger` asserts over its fill ledger — a
  * derived quantity must equal the signed sum of the events behind it. Here the derived quantity is
  * the venue's balance and the events are its deposits and withdrawals.
  */
@@ -39,7 +39,7 @@ sealed interface CurrencyVerdict {
      * measured, or arrive in the history after the balance that already reflects it. Reporting
      * either as unexplained would produce a drift report that cries wolf, and a report nobody
      * trusts is one nobody reads — the same reasoning that makes an in-flight projection
-     * inconclusive rather than divergent in `trading-system`.
+     * inconclusive rather than divergent in `position-ledger`.
      */
     data class Inconclusive(override val currency: String, val reason: String) : CurrencyVerdict
 }

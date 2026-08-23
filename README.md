@@ -133,7 +133,7 @@ Retry is **bounded**, and that bound is the point — an unbounded retry against
 
 Every Bitfinex read records a **balance snapshot**, and compares it with the previous one against the venue's own movement history. The property asserted is conservation: **a currency's balance change between two snapshots must equal the signed sum of the movements in that window.**
 
-That is worth asserting because the two sides have independent origins. The balance comes from the wallets endpoint and the movements from the movements endpoint; there is no code here that could make them agree by construction, so agreement is evidence rather than tautology. It is the same property `trading-system` asserts over its fill ledger, in a domain where the write path belongs to someone else entirely.
+That is worth asserting because the two sides have independent origins. The balance comes from the wallets endpoint and the movements from the movements endpoint; there is no code here that could make them agree by construction, so agreement is evidence rather than tautology. It is the same property `position-ledger` asserts over its fill ledger, in a domain where the write path belongs to someone else entirely.
 
 Balances are summed across wallet types before comparing. Bitfinex splits a currency over `exchange`, `margin` and `funding`, and an internal transfer between them is not a movement — reconciling per wallet type would report every such transfer as unexplained on both sides.
 
